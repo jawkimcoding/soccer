@@ -42,67 +42,67 @@ const SQUAD_DATA = [
 // Tactics Formation Configuration (coordinates in %)
 const formations = {
   '4-4-2': [
-    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 90 },
-    { id: 'lb', label: 'LB', role: '좌측 수비수', x: 15, y: 70 },
-    { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 38, y: 72 },
-    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 62, y: 72 },
-    { id: 'rb', label: 'RB', role: '우측 수비수', x: 85, y: 70 },
-    { id: 'lm', label: 'LM', role: '좌측 미드필더', x: 15, y: 45 },
-    { id: 'lcm', label: 'LCM', role: '좌중앙 미드필더', x: 38, y: 48 },
-    { id: 'rcm', label: 'RCM', role: '우중앙 미드필더', x: 62, y: 48 },
-    { id: 'rm', label: 'RM', role: '우측 미드필더', x: 85, y: 45 },
+    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 88 },
+    { id: 'lb', label: 'LB', role: '좌측 수비수', x: 15, y: 68 },
+    { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 38, y: 70 },
+    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 62, y: 70 },
+    { id: 'rb', label: 'RB', role: '우측 수비수', x: 85, y: 68 },
+    { id: 'lm', label: 'LM', role: '좌측 미드필더', x: 15, y: 44 },
+    { id: 'lcm', label: 'LCM', role: '좌중앙 미드필더', x: 38, y: 47 },
+    { id: 'rcm', label: 'RCM', role: '우중앙 미드필더', x: 62, y: 47 },
+    { id: 'rm', label: 'RM', role: '우측 미드필더', x: 85, y: 44 },
     { id: 'lst', label: 'LS', role: '좌측 스트라이커', x: 35, y: 20 },
     { id: 'rst', label: 'RS', role: '우측 스트라이커', x: 65, y: 20 }
   ],
   '4-3-3': [
-    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 90 },
-    { id: 'lb', label: 'LB', role: '좌측 수비수', x: 15, y: 70 },
-    { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 38, y: 72 },
-    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 62, y: 72 },
-    { id: 'rb', label: 'RB', role: '우측 수비수', x: 85, y: 70 },
-    { id: 'dm', label: 'DM', role: '수비형 미드필더', x: 50, y: 58 },
-    { id: 'lcm', label: 'LCM', role: '좌중앙 미드필더', x: 30, y: 44 },
-    { id: 'rcm', label: 'RCM', role: '우중앙 미드필더', x: 70, y: 44 },
-    { id: 'lw', label: 'LW', role: '좌측 윙어', x: 15, y: 22 },
-    { id: 'st', label: 'ST', role: '중앙 스트라이커', x: 50, y: 18 },
-    { id: 'rw', label: 'RW', role: '우측 윙어', x: 85, y: 22 }
+    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 88 },
+    { id: 'lb', label: 'LB', role: '좌측 수비수', x: 15, y: 68 },
+    { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 38, y: 70 },
+    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 62, y: 70 },
+    { id: 'rb', label: 'RB', role: '우측 수비수', x: 85, y: 68 },
+    { id: 'dm', label: 'DM', role: '수비형 미드필더', x: 50, y: 57 },
+    { id: 'lcm', label: 'LCM', role: '좌중앙 미드필더', x: 30, y: 43 },
+    { id: 'rcm', label: 'RCM', role: '우중앙 미드필더', x: 70, y: 43 },
+    { id: 'lw', label: 'LW', role: '좌측 윙어', x: 15, y: 21 },
+    { id: 'st', label: 'ST', role: '중앙 스트라이커', x: 50, y: 17 },
+    { id: 'rw', label: 'RW', role: '우측 윙어', x: 85, y: 21 }
   ],
   '3-5-2': [
-    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 90 },
-    { id: 'lcb', label: 'LCB', role: '좌측 센터백', x: 28, y: 72 },
-    { id: 'cb', label: 'CB', role: '중앙 센터백', x: 50, y: 75 },
-    { id: 'rcb', label: 'RCB', role: '우측 센터백', x: 72, y: 72 },
-    { id: 'lwb', label: 'LWB', role: '좌측 윙백', x: 12, y: 55 },
-    { id: 'rwb', label: 'RWB', role: '우측 윙백', x: 88, y: 55 },
-    { id: 'ldm', label: 'LDM', role: '좌측 수미', x: 35, y: 52 },
-    { id: 'rdm', label: 'RDM', role: '우측 수미', x: 65, y: 52 },
-    { id: 'am', label: 'AM', role: '공격형 미드필더', x: 50, y: 35 },
+    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 88 },
+    { id: 'lcb', label: 'LCB', role: '좌측 센터백', x: 28, y: 70 },
+    { id: 'cb', label: 'CB', role: '중앙 센터백', x: 50, y: 73 },
+    { id: 'rcb', label: 'RCB', role: '우측 센터백', x: 72, y: 70 },
+    { id: 'lwb', label: 'LWB', role: '좌측 윙백', x: 12, y: 54 },
+    { id: 'rwb', label: 'RWB', role: '우측 윙백', x: 88, y: 54 },
+    { id: 'ldm', label: 'LDM', role: '좌측 수미', x: 35, y: 51 },
+    { id: 'rdm', role: 'RDM', role: '우측 수미', x: 65, y: 51 },
+    { id: 'am', label: 'AM', role: '공격형 미드필더', x: 50, y: 34 },
     { id: 'lst', label: 'LS', role: '좌측 스트라이커', x: 35, y: 18 },
     { id: 'rst', label: 'RS', role: '우측 스트라이커', x: 65, y: 18 }
   ],
   '4-2-3-1': [
-    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 90 },
-    { id: 'lb', label: 'LB', role: '좌측 수비수', x: 15, y: 70 },
-    { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 38, y: 72 },
-    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 62, y: 72 },
-    { id: 'rb', label: 'RB', role: '우측 수비수', x: 85, y: 70 },
-    { id: 'ldm', label: 'LDM', role: '좌측 수미', x: 35, y: 55 },
-    { id: 'rdm', label: 'RDM', role: '우측 수미', x: 65, y: 55 },
-    { id: 'lam', label: 'LAM', role: '좌측 공미', x: 20, y: 35 },
-    { id: 'cam', label: 'CAM', role: '중앙 공미', x: 50, y: 32 },
-    { id: 'ram', label: 'RAM', role: '우측 공미', x: 80, y: 35 },
+    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 88 },
+    { id: 'lb', label: 'LB', role: '좌측 수비수', x: 15, y: 68 },
+    { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 38, y: 70 },
+    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 62, y: 70 },
+    { id: 'rb', label: 'RB', role: '우측 수비수', x: 85, y: 68 },
+    { id: 'ldm', label: 'LDM', role: '좌측 수미', x: 35, y: 54 },
+    { id: 'rdm', label: 'RDM', role: '우측 수미', x: 65, y: 54 },
+    { id: 'lam', label: 'LAM', role: '좌측 공미', x: 20, y: 34 },
+    { id: 'cam', label: 'CAM', role: '중앙 공미', x: 50, y: 31 },
+    { id: 'ram', label: 'RAM', role: '우측 공미', x: 80, y: 34 },
     { id: 'st', label: 'ST', role: '스트라이커', x: 50, y: 16 }
   ],
   '5-3-2': [
-    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 90 },
-    { id: 'lwb', label: 'LWB', role: '좌측 윙백', x: 12, y: 65 },
-    { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 32, y: 72 },
-    { id: 'cb', label: 'CB', role: '중앙 수비수', x: 50, y: 74 },
-    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 68, y: 72 },
-    { id: 'rwb', label: 'RWB', role: '우측 윙백', x: 88, y: 65 },
-    { id: 'lcm', label: 'LCM', role: '좌중앙 미드필더', x: 30, y: 46 },
-    { id: 'cm', label: 'CM', role: '중앙 미드필더', x: 50, y: 48 },
-    { id: 'rcm', label: 'RCM', role: '우중앙 미드필더', x: 70, y: 46 },
+    { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 88 },
+    { id: 'lwb', label: 'LWB', role: '좌측 윙백', x: 12, y: 64 },
+    { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 32, y: 70 },
+    { id: 'cb', label: 'CB', role: '중앙 수비수', x: 50, y: 72 },
+    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 68, y: 70 },
+    { id: 'rwb', label: 'RWB', role: '우측 윙백', x: 88, y: 64 },
+    { id: 'lcm', label: 'LCM', role: '좌중앙 미드필더', x: 30, y: 45 },
+    { id: 'cm', label: 'CM', role: '중앙 미드필더', x: 50, y: 47 },
+    { id: 'rcm', label: 'RCM', role: '우중앙 미드필더', x: 70, y: 45 },
     { id: 'lst', label: 'LS', role: '좌측 스트라이커', x: 35, y: 20 },
     { id: 'rst', label: 'RS', role: '우측 스트라이커', x: 65, y: 20 }
   ]
@@ -112,7 +112,7 @@ const formations = {
 let squad = [...SQUAD_DATA];
 let currentQuarter = 1;
 
-// Quarters Data Model (No storage - always fresh load)
+// Quarters Data Model (No storage)
 let quarters = {
   1: { tactics: '4-4-2', placedPlayers: {} },
   2: { tactics: '4-4-2', placedPlayers: {} },
@@ -124,8 +124,7 @@ let quarters = {
 let activeFormation = '4-4-2';
 let placedPlayers = {};
 
-// Click-to-Place State Tracker
-// Stores: null OR { id: number, name: string, fromSlotId: string | null }
+// Click-to-Place Selection State Tracker
 let selectedPlayerForPlacement = null;
 
 // DOM Elements
@@ -136,6 +135,48 @@ const squadList = document.getElementById('squadList');
 const squadCount = document.getElementById('squadCount');
 const playerSearch = document.getElementById('playerSearch');
 const resetBtn = document.getElementById('resetBtn');
+const liveBoardQuarter = document.getElementById('liveBoardQuarter');
+
+// Vector SVG Jersey Designer (LINEUP11 Replica)
+function getJerseySvg(isGk) {
+  const mainColor = isGk ? '#2ecc71' : '#1e3a5f'; // Bright Green/Lime vs Deep Navy
+  const trimColor = isGk ? '#27ae60' : '#15253b'; // Secondary sleeves color
+  const outlineColor = '#ffffff';
+
+  return `
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- Shadow -->
+      <ellipse cx="50" cy="88" rx="26" ry="6" fill="rgba(0,0,0,0.25)" filter="blur(2px)"/>
+      <!-- Jersey Silhouette -->
+      <path d="M 28 22 
+               L 42 14 
+               A 11 11 0 0 1 58 14 
+               L 72 22 
+               L 84 32 
+               L 74 43 
+               L 66 36 
+               L 66 84 
+               L 34 84 
+               L 34 36 
+               L 26 43 
+               L 16 32 
+               Z" 
+            fill="${mainColor}" 
+            stroke="${outlineColor}" 
+            stroke-width="3" 
+            stroke-linejoin="round"/>
+      <!-- Sleeves trims -->
+      <path d="M 16 32 L 26 43" stroke="${trimColor}" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M 84 32 L 74 43" stroke="${trimColor}" stroke-width="4.5" stroke-linecap="round"/>
+      <!-- V-Neck Collar -->
+      <path d="M 42 14 A 11 11 0 0 0 58 14 L 50 23 Z" fill="${trimColor}" stroke="${outlineColor}" stroke-width="1.5"/>
+      <!-- Chest Emblem Badge -->
+      <circle cx="39" cy="32" r="3.5" fill="#f1c40f"/>
+      <line x1="39" y1="30" x2="39" y2="34" stroke="#fff" stroke-width="1"/>
+      <line x1="37" y1="32" x2="41" y2="32" stroke="#fff" stroke-width="1"/>
+    </svg>
+  `;
+}
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -161,7 +202,6 @@ function setupQuarterTabs() {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
 
-      // Clear any pending selection on quarter change
       cancelPlacementSelection();
 
       // Save current state in memory
@@ -172,6 +212,8 @@ function setupQuarterTabs() {
 
       // Switch quarter
       currentQuarter = parseInt(tab.dataset.quarter);
+      liveBoardQuarter.textContent = currentQuarter;
+      
       renderCurrentQuarter();
     });
   });
@@ -225,7 +267,6 @@ function renderSquadList(searchTerm = '') {
       card.draggable = false;
     }
 
-    // Apply selected styling if this player is chosen for Click-to-Place
     if (selectedPlayerForPlacement && 
         selectedPlayerForPlacement.id === player.id && 
         selectedPlayerForPlacement.fromSlotId === null) {
@@ -237,17 +278,14 @@ function renderSquadList(searchTerm = '') {
       <span class="player-card-name" title="${player.name}">${player.name}</span>
     `;
 
-    // 1. Drag Start
+    // Desktop HTML5 dragstart
     card.addEventListener('dragstart', handleDragStart);
-    
-    // 2. Mobile touch dragging
-    setupMobileTouchForCard(card);
 
-    // 3. Click-to-Place (Selection trigger)
+    // Hybrid click selection (No mobile touch listeners to prevent click suppression)
     card.addEventListener('click', (e) => {
       e.stopPropagation();
       if (isPlaced) return;
-      handleSquadPlayerClick(player, card);
+      handleSquadPlayerClick(player);
     });
 
     squadList.appendChild(card);
@@ -267,17 +305,15 @@ function renderPitchGuides() {
     el.style.top = `${slot.y}%`;
     el.dataset.slotId = slot.id;
 
-    // Show awaiting glow if a player is selected to be placed
     if (selectedPlayerForPlacement) {
       el.classList.add('awaiting-placement');
     }
 
     el.innerHTML = `
       <span class="position-slot-label">${slot.label}</span>
-      <span class="position-slot-role">${slot.role || ''}</span>
     `;
 
-    // Drag drop events
+    // Drag events
     el.addEventListener('dragover', handleDragOver);
     el.addEventListener('dragleave', handleDragLeave);
     el.addEventListener('drop', handleDrop);
@@ -306,43 +342,33 @@ function renderPlacedPlayers() {
     el.style.top = `${slot.y}%`;
     el.dataset.slotId = slot.id;
     el.dataset.playerId = player.id;
+    el.className = 'placed-player';
 
-    // Determine position specific neon class
-    let neonClass = 'neon-mf'; 
-    const sid = slot.id.toLowerCase();
-    if (sid.includes('gk')) {
-      neonClass = 'neon-gk'; 
-    } else if (sid.includes('cb') || sid.includes('lb') || sid.includes('rb') || sid.includes('wb')) {
-      neonClass = 'neon-df'; 
-    } else if (sid.includes('st') || sid.includes('st') || sid.includes('lw') || sid.includes('rw') || sid === 'ls' || sid === 'rs') {
-      neonClass = 'neon-fw'; 
-    }
-
-    el.className = `placed-player ${neonClass}`;
-
-    // Apply selection styling if this placed player is selected for moving
     if (selectedPlayerForPlacement && 
         selectedPlayerForPlacement.id === player.id && 
         selectedPlayerForPlacement.fromSlotId === slot.id) {
       el.classList.add('selected');
     }
 
+    // Determine if player is GoalKeeper to color green jersey
+    const isGk = slot.id.toLowerCase() === 'gk';
+    
+    // Inject Vector Jersey Graphic instead of raw emojis
     el.innerHTML = `
-      <div class="placed-player-card"></div>
+      <div class="placed-player-card">
+        ${getJerseySvg(isGk)}
+      </div>
       <div class="placed-player-name">${player.name}</div>
       <button class="remove-player-btn" title="제거">×</button>
     `;
 
-    // Remove
+    // Remove handler
     el.querySelector('.remove-player-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       removePlayer(slot.id);
     });
 
-    // Mobile touch drag
-    setupMobileTouchForPlacedPlayer(el, slot.id, player);
-
-    // Click/Touch-to-Place (Select placed player to move)
+    // Click-to-Place (Select placed player to move)
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       handlePlacedPlayerClick(player, slot.id);
@@ -355,7 +381,6 @@ function renderPlacedPlayers() {
 // Remove Player from Slot
 function removePlayer(slotId) {
   if (placedPlayers[slotId]) {
-    // If the removed player was currently selected, cancel selection
     if (selectedPlayerForPlacement && selectedPlayerForPlacement.fromSlotId === slotId) {
       cancelPlacementSelection();
     }
@@ -405,7 +430,6 @@ function setupTacticsButtons() {
       quarters[currentQuarter].tactics = activeFormation;
       quarters[currentQuarter].placedPlayers = { ...placedPlayers };
 
-      // Maintain selection state during tactics change
       renderPitchGuides();
       renderPlacedPlayers();
       renderSquadList(playerSearch.value);
@@ -424,7 +448,7 @@ function setupSearch() {
 let draggedPlayer = null;
 
 function handleDragStart(e) {
-  cancelPlacementSelection(); // cancel click selection when drag starts
+  cancelPlacementSelection(); 
   draggedPlayer = {
     id: parseInt(this.dataset.id),
     name: this.dataset.name
@@ -433,7 +457,6 @@ function handleDragStart(e) {
   e.dataTransfer.effectAllowed = 'move';
 }
 
-// Drag and Drop implementation
 function setupDragAndDrop() {
   pitch.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -461,7 +484,6 @@ function handleDrop(e) {
 }
 
 function placePlayerInSlot(player, slotId) {
-  // Prevent duplicate
   Object.keys(placedPlayers).forEach(sid => {
     if (placedPlayers[sid].id === player.id) {
       delete placedPlayers[sid];
@@ -469,8 +491,6 @@ function placePlayerInSlot(player, slotId) {
   });
 
   placedPlayers[slotId] = player;
-
-  // Sync memory
   quarters[currentQuarter].placedPlayers = { ...placedPlayers };
 
   renderPlacedPlayers();
@@ -478,12 +498,11 @@ function placePlayerInSlot(player, slotId) {
 }
 
 // ==========================================================================
-// Click-to-Place & Touch-to-Place Feature Handlers (Hybrid Mode)
+// 100% Reliable Click-to-Place Handlers (Touch friendly, no scroll blocking)
 // ==========================================================================
 
-// 1. Click on waiting list player card
-function handleSquadPlayerClick(player, cardEl) {
-  // If clicked the already selected player, cancel selection
+// Click on waiting list card
+function handleSquadPlayerClick(player) {
   if (selectedPlayerForPlacement && 
       selectedPlayerForPlacement.id === player.id && 
       selectedPlayerForPlacement.fromSlotId === null) {
@@ -491,22 +510,19 @@ function handleSquadPlayerClick(player, cardEl) {
     return;
   }
 
-  // Set selected player
   selectedPlayerForPlacement = {
     id: player.id,
     name: player.name,
     fromSlotId: null
   };
 
-  // Re-render UI to show selection highlights and awaiting guides
   renderSquadList(playerSearch.value);
   renderPitchGuides();
   renderPlacedPlayers();
 }
 
-// 2. Click on placed player inside pitch (prepare for movement)
+// Click on placed player inside pitch
 function handlePlacedPlayerClick(player, slotId) {
-  // If clicked the already selected placed player, cancel selection
   if (selectedPlayerForPlacement && 
       selectedPlayerForPlacement.id === player.id && 
       selectedPlayerForPlacement.fromSlotId === slotId) {
@@ -514,7 +530,6 @@ function handlePlacedPlayerClick(player, slotId) {
     return;
   }
 
-  // Set selected player for relocation
   selectedPlayerForPlacement = {
     id: player.id,
     name: player.name,
@@ -526,7 +541,7 @@ function handlePlacedPlayerClick(player, slotId) {
   renderPlacedPlayers();
 }
 
-// 3. Click on a pitch position slot
+// Click on a pitch slot
 function handleSlotClick(slotId) {
   if (!selectedPlayerForPlacement) return;
 
@@ -535,15 +550,12 @@ function handleSlotClick(slotId) {
     name: selectedPlayerForPlacement.name
   };
 
-  // If this is a relocation, remove player from the previous slot
+  // Relocation remove old
   if (selectedPlayerForPlacement.fromSlotId) {
     delete placedPlayers[selectedPlayerForPlacement.fromSlotId];
   }
 
-  // Place player in the new slot
   placePlayerInSlot(player, slotId);
-
-  // Clear selection
   cancelPlacementSelection();
 }
 
@@ -557,10 +569,9 @@ function cancelPlacementSelection() {
   renderPlacedPlayers();
 }
 
-// Cancel selection when clicking outside pitch slots and player cards
+// Outside click cancellation
 function setupOutsideClickCancel() {
   document.addEventListener('click', (e) => {
-    // If clicked element is not a position slot, player card, or placed player, cancel selection
     if (!e.target.closest('.position-slot') && 
         !e.target.closest('.player-card') && 
         !e.target.closest('.placed-player') && 
@@ -570,187 +581,6 @@ function setupOutsideClickCancel() {
       cancelPlacementSelection();
     }
   });
-}
-
-// ==========================================================================
-// Mobile Touch Drag and Drop Implementation
-// ==========================================================================
-let touchDragEl = null;
-let touchActiveSlot = null;
-
-function findSlotAtPoint(clientX, clientY) {
-  let matchedSlot = null;
-  const slots = document.querySelectorAll('.position-slot');
-  
-  slots.forEach(slot => {
-    const rect = slot.getBoundingClientRect();
-    if (clientX >= rect.left && clientX <= rect.right &&
-        clientY >= rect.top && clientY <= rect.bottom) {
-      matchedSlot = slot;
-    }
-  });
-  
-  return matchedSlot;
-}
-
-// Mobile touch dragging for pool list players
-function setupMobileTouchForCard(card) {
-  card.addEventListener('touchstart', function(e) {
-    if (card.classList.contains('placed')) return;
-
-    // Clear click selection when drag starts
-    cancelPlacementSelection();
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    const playerData = {
-      id: parseInt(card.dataset.id),
-      name: card.dataset.name
-    };
-
-    createTouchFloatingClone(playerData.name, e.touches[0].clientX, e.touches[0].clientY);
-
-    document.querySelectorAll('.position-slot').forEach(s => {
-      s.style.borderColor = 'var(--accent-color)';
-    });
-
-    const touchMoveHandler = function(moveEvent) {
-      moveEvent.preventDefault();
-      const currentTouch = moveEvent.touches[0];
-      moveTouchDragEl(currentTouch.clientX, currentTouch.clientY);
-      
-      const slot = findSlotAtPoint(currentTouch.clientX, currentTouch.clientY);
-      if (touchActiveSlot) {
-        touchActiveSlot.classList.remove('drag-over');
-      }
-      touchActiveSlot = slot;
-      if (touchActiveSlot) {
-        touchActiveSlot.classList.add('drag-over');
-      }
-    };
-
-    const touchEndHandler = function(endEvent) {
-      document.removeEventListener('touchmove', touchMoveHandler);
-      document.removeEventListener('touchend', touchEndHandler);
-
-      removeTouchFloatingClone();
-
-      document.querySelectorAll('.position-slot').forEach(s => {
-        s.style.borderColor = '';
-        s.classList.remove('drag-over');
-      });
-
-      if (touchActiveSlot) {
-        placePlayerInSlot(playerData, touchActiveSlot.dataset.slotId);
-        touchActiveSlot = null;
-      }
-    };
-
-    document.addEventListener('touchmove', touchMoveHandler, { passive: false });
-    document.addEventListener('touchend', touchEndHandler);
-  }, { passive: false });
-}
-
-// Mobile touch dragging for already placed players
-function setupMobileTouchForPlacedPlayer(placedEl, currentSlotId, player) {
-  placedEl.addEventListener('touchstart', function(e) {
-    // Clear click selection when drag starts
-    cancelPlacementSelection();
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    createTouchFloatingClone(player.name, e.touches[0].clientX, e.touches[0].clientY);
-    placedEl.style.opacity = '0.2';
-
-    document.querySelectorAll('.position-slot').forEach(s => {
-      s.style.borderColor = 'var(--accent-color)';
-    });
-
-    const touchMoveHandler = function(moveEvent) {
-      moveEvent.preventDefault();
-      const currentTouch = moveEvent.touches[0];
-      moveTouchDragEl(currentTouch.clientX, currentTouch.clientY);
-
-      const slot = findSlotAtPoint(currentTouch.clientX, currentTouch.clientY);
-      if (touchActiveSlot) {
-        touchActiveSlot.classList.remove('drag-over');
-      }
-      touchActiveSlot = slot;
-      if (touchActiveSlot) {
-        touchActiveSlot.classList.add('drag-over');
-      }
-    };
-
-    const touchEndHandler = function(endEvent) {
-      document.removeEventListener('touchmove', touchMoveHandler);
-      document.removeEventListener('touchend', touchEndHandler);
-
-      removeTouchFloatingClone();
-      placedEl.style.opacity = '1';
-
-      document.querySelectorAll('.position-slot').forEach(s => {
-        s.style.borderColor = '';
-        s.classList.remove('drag-over');
-      });
-
-      if (touchActiveSlot) {
-        const newSlotId = touchActiveSlot.dataset.slotId;
-        delete placedPlayers[currentSlotId];
-        placePlayerInSlot(player, newSlotId);
-        touchActiveSlot = null;
-      } else {
-        const pitchRect = pitch.getBoundingClientRect();
-        const touch = endEvent.changedTouches[0];
-        
-        if (touch.clientX < pitchRect.left || touch.clientX > pitchRect.right ||
-            touch.clientY < pitchRect.top || touch.clientY > pitchRect.bottom) {
-          removePlayer(currentSlotId);
-        }
-      }
-    };
-
-    document.addEventListener('touchmove', touchMoveHandler, { passive: false });
-    document.addEventListener('touchend', touchEndHandler);
-  }, { passive: false });
-}
-
-function createTouchFloatingClone(name, clientX, clientY) {
-  if (touchDragEl) touchDragEl.remove();
-
-  touchDragEl = document.createElement('div');
-  touchDragEl.className = 'placed-player-card';
-  touchDragEl.style.position = 'fixed';
-  touchDragEl.style.pointerEvents = 'none';
-  touchDragEl.style.zIndex = '1000';
-  touchDragEl.style.width = '55px';
-  touchDragEl.style.height = '55px';
-  touchDragEl.style.border = '3px solid var(--accent-color)';
-  touchDragEl.style.borderRadius = '50%';
-  touchDragEl.style.background = 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%)';
-  touchDragEl.style.display = 'flex';
-  touchDragEl.style.alignItems = 'center';
-  touchDragEl.style.justifyContent = 'center';
-  touchDragEl.style.boxShadow = '0 10px 25px rgba(0,0,0,0.6)';
-  touchDragEl.innerHTML = '👕';
-
-  moveTouchDragEl(clientX, clientY);
-  document.body.appendChild(touchDragEl);
-}
-
-function moveTouchDragEl(clientX, clientY) {
-  if (touchDragEl) {
-    touchDragEl.style.left = `${clientX - 27}px`;
-    touchDragEl.style.top = `${clientY - 27}px`;
-  }
-}
-
-function removeTouchFloatingClone() {
-  if (touchDragEl) {
-    touchDragEl.remove();
-    touchDragEl = null;
-  }
 }
 
 // Reset Button Logic
@@ -765,6 +595,7 @@ function setupResetButton() {
         placedPlayers: {}
       };
       
+      cancelPlacementSelection();
       renderCurrentQuarter();
     }
   });

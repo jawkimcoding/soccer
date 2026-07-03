@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FM Tactics Board - 양정고 새벽 축구반</title>
+  <title>최강양정 - FM Tactics Board</title>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,29 +16,44 @@
     <!-- Header -->
     <header class="main-header">
       <div class="logo-area">
-        <span class="logo-fm">FM</span>
-        <h1 class="logo-title">TACTICS BOARD</h1>
+        <span class="logo-fm">양정</span>
+        <h1 class="logo-title">최강양정 라인업</h1>
       </div>
-      <div class="subtitle-area">
-        <span class="subtitle-text">양정고 새벽 축구반 전술판</span>
+      <!-- Quarter Selector Tabs -->
+      <div class="quarter-tabs-bar">
+        <button class="quarter-btn active" data-quarter="1">1쿼터</button>
+        <button class="quarter-btn" data-quarter="2">2쿼터</button>
+        <button class="quarter-btn" data-quarter="3">3쿼터</button>
+        <button class="quarter-btn" data-quarter="4">4쿼터</button>
       </div>
     </header>
-
-    <!-- Quarter Selector Tabs -->
-    <div class="quarter-tabs-bar">
-      <button class="quarter-btn active" data-quarter="1">1쿼터</button>
-      <button class="quarter-btn" data-quarter="2">2쿼터</button>
-      <button class="quarter-btn" data-quarter="3">3쿼터</button>
-      <button class="quarter-btn" data-quarter="4">4쿼터</button>
-    </div>
 
     <!-- Main Content -->
     <main class="main-content">
       <!-- Left: Pitch -->
       <section class="pitch-section">
+        <!-- Dashboard Outer Header Replica -->
+        <div class="live-board-header">
+          <h2 class="live-board-title" id="liveBoardTitle">최강양정</h2>
+          <div class="live-board-quarter" id="liveBoardQuarter">1</div>
+        </div>
+
         <div class="pitch-container">
           <div class="pitch" id="pitch">
-            <!-- Pitch lines (drawn via CSS/SVG) -->
+            <!-- Goalpost Decoration -->
+            <div class="goalpost-decor"></div>
+            
+            <!-- Ad board replicas -->
+            <div class="ad-decor-container">
+              <div class="ad-decor-board left-ad">
+                <div class="ad-icon-colors">
+                  <span></span><span></span>
+                </div>
+              </div>
+              <div class="ad-decor-board right-ad">SPORTS STUDIO</div>
+            </div>
+
+            <!-- Pitch lines -->
             <div class="pitch-line half-way"></div>
             <div class="pitch-line center-circle"></div>
             <div class="pitch-line penalty-area top"></div>
@@ -46,11 +61,14 @@
             <div class="pitch-line goal-area top"></div>
             <div class="pitch-line goal-area bottom"></div>
 
-            <!-- Position Guides (Dynamically rendered based on selected formation) -->
+            <!-- Position Guides (slots) -->
             <div class="guides-overlay" id="guidesOverlay"></div>
             
-            <!-- Placed Players (Dynamically added here) -->
+            <!-- Placed Players -->
             <div class="players-overlay" id="playersOverlay"></div>
+            
+            <!-- Brand Badge Replica -->
+            <div class="brand-badge-replica">#LINEUP11</div>
           </div>
         </div>
       </section>
@@ -59,7 +77,7 @@
       <section class="control-section">
         <!-- Tactics Selector -->
         <div class="panel tactics-panel">
-          <h2 class="panel-title">전술 포메이션</h2>
+          <h2 class="panel-title">포메이션 설정</h2>
           <div class="tactics-buttons">
             <button class="tactics-btn active" data-formation="4-4-2">4-4-2</button>
             <button class="tactics-btn" data-formation="4-3-3">4-3-3</button>
@@ -72,12 +90,12 @@
         <!-- Squad List -->
         <div class="panel squad-panel">
           <div class="panel-header">
-            <h2 class="panel-title">선수 명단 (<span id="squadCount">0</span>명)</h2>
-            <input type="text" id="playerSearch" class="search-input" placeholder="선수 이름 검색...">
+            <h2 class="panel-title">선수단 명단 (<span id="squadCount">0</span>명)</h2>
+            <input type="text" id="playerSearch" class="search-input" placeholder="이름으로 빠른 검색...">
           </div>
           <div class="squad-list" id="squadList">
             <!-- Player items will be rendered here -->
-            <div class="loading">선수 명단을 불러오는 중...</div>
+            <div class="loading">명단을 준비하는 중...</div>
           </div>
         </div>
 

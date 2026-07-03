@@ -1,18 +1,7 @@
-// 깃허브 자동 삭제 감지(Scanner)를 우회하기 위해 발급받은 GitHub Access Token을
-// 역순(Reverse)으로 뒤집어 아래 큰따옴표 안에 적어주세요.
-// 예시: 토큰이 "ghp_abcdef123456" 이라면 -> "654321fedcba_phg" 형태로 입력
-const REVERSED_GITHUB_TOKEN = "여기에_뒤집은_토큰을_입력하세요";
-
-const GITHUB_REPO_OWNER = "jawkimcoding";
-const GITHUB_REPO_NAME = "soccer";
-
-// Helper to retrieve token safely
-const getGithubToken = () => {
-  if (!REVERSED_GITHUB_TOKEN || REVERSED_GITHUB_TOKEN.includes("여기에")) {
-    return "";
-  }
-  return REVERSED_GITHUB_TOKEN.split('').reverse().join('');
-};
+// API Base URL (if hosted on Cloudflare Pages, requests will target local Express server)
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? ''
+  : 'http://localhost:3000';
 
 // Tactics Formation Configuration (coordinates in %)
 const formations = {
@@ -119,10 +108,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderPlacedPlayers();
 });
 
-// 1. Fetch Squad List from local static JSON
+// 1. Fetch Squad List from Server
 async function fetchSquad() {
   try {
-    const res = await fetch('data/squad.json');
+    const res = await fetch(`${API_BASE}/api/squad`);
     if (!res.ok) throw new Error('Failed to fetch squad');
     squad = await res.json();
     squad.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
@@ -134,53 +123,22 @@ async function fetchSquad() {
   }
 }
 
-// Helper to create GitHub headers
-function getGithubHeaders(requireAuth = false) {
-  const token = getGithubToken();
-  const headers = {
-    'Accept': 'application/vnd.github+json'
-  };
-  if (requireAuth || token) {
-    if (!token) {
-      alert("GitHub Access Token이 내장되지 않았거나 올바르지 않습니다. app.js 상단의 REVERSED_GITHUB_TOKEN에 토큰을 뒤집어 입력해 주세요.");
-      throw new Error("Token missing");
-    }
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
-// 2. Fetch List of Saved Formations via GitHub API
+// 2. Fetch List of Saved Formations
 async function fetchFormationsList(selectNameAfterFetch = '') {
   try {
-    const url = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/data/formations?t=${Date.now()}`;
-    const res = await fetch(url, {
-      headers: getGithubHeaders(false)
-    });
-    
-    if (res.status === 404) {
-      // Formations directory doesn't exist yet
-      squadSelector.innerHTML = '<option value="">-- 새 스쿼드 작성 --</option>';
-      return;
-    }
+    const res = await fetch(`${API_BASE}/api/formations`);
     if (!res.ok) throw new Error('Failed to fetch formations list');
-    
     const list = await res.json();
     
     // Clear old options except the first one
     squadSelector.innerHTML = '<option value="">-- 새 스쿼드 작성 --</option>';
     
-    if (Array.isArray(list)) {
-      list
-        .filter(file => file.name.endsWith('.json'))
-        .forEach(file => {
-          const name = file.name.replace('.json', '');
-          const opt = document.createElement('option');
-          opt.value = name;
-          opt.textContent = name;
-          squadSelector.appendChild(opt);
-        });
-    }
+    list.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      squadSelector.appendChild(opt);
+    });
 
     if (selectNameAfterFetch) {
       squadSelector.value = selectNameAfterFetch;
@@ -189,13 +147,14 @@ async function fetchFormationsList(selectNameAfterFetch = '') {
       squadSelector.value = selectedSquadName;
     }
   } catch (err) {
-    console.error('Failed to load formations list from GitHub:', err);
+    console.error('Failed to load formations list:', err);
   }
 }
 
-// 3. Load Selected Squad Data from GitHub raw content
+// 3. Load Selected Squad Data
 async function loadSquadData(name) {
   if (!name) {
+    // Reset to empty board
     placedPlayers = {};
     selectedSquadName = '';
     renderPitchGuides();
@@ -205,9 +164,7 @@ async function loadSquadData(name) {
   }
 
   try {
-    // Avoid caching by appending timestamp
-    const url = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/data/formations/${encodeURIComponent(name)}.json?t=${Date.now()}`;
-    const res = await fetch(url);
+    const res = await fetch(`${API_BASE}/api/formations/${encodeURIComponent(name)}`);
     if (!res.ok) throw new Error('Failed to fetch squad data');
     const data = await res.json();
     
@@ -262,6 +219,7 @@ function renderSquadList(searchTerm = '') {
     return;
   }
 
+  // Check if player is already placed
   const placedIds = Object.values(placedPlayers).map(p => p.id);
 
   filtered.forEach(player => {
@@ -282,7 +240,10 @@ function renderSquadList(searchTerm = '') {
       <span class="player-card-name" title="${player.name}">${player.name}</span>
     `;
 
+    // Web Drag Events
     card.addEventListener('dragstart', handleDragStart);
+    
+    // Mobile Touch Events
     setupMobileTouchForCard(card);
 
     squadList.appendChild(card);
@@ -307,6 +268,7 @@ function renderPitchGuides() {
       <span class="position-slot-role">${slot.role || ''}</span>
     `;
 
+    // Drop Events
     el.addEventListener('dragover', handleDragOver);
     el.addEventListener('dragleave', handleDragLeave);
     el.addEventListener('drop', handleDrop);
@@ -367,6 +329,7 @@ function setupTacticsButtons() {
       const newFormationName = btn.dataset.formation;
       const newFormationSlots = formations[newFormationName] || [];
 
+      // Smart migration
       const oldPlaced = { ...placedPlayers };
       placedPlayers = {};
 
@@ -460,6 +423,7 @@ function setupMobileTouchForCard(card) {
       name: card.dataset.name
     };
 
+    // Create a floating clone
     touchDragEl = document.createElement('div');
     touchDragEl.className = 'placed-player-card';
     touchDragEl.style.position = 'fixed';
@@ -538,12 +502,7 @@ function checkActiveSlotUnderTouch(clientX, clientY) {
   }
 }
 
-// Helper to convert UTF8 string to Base64 in Browser
-function utf8_to_b64(str) {
-  return window.btoa(unescape(encodeURIComponent(str)));
-}
-
-// 12. Save and Git Push via GitHub API
+// 12. Save and Git Push via local Express Server
 function setupSaveButton() {
   saveBtn.addEventListener('click', async () => {
     const today = new Date();
@@ -560,16 +519,10 @@ function setupSaveButton() {
       return;
     }
 
-    // Check if token exists
-    if (!getGithubToken()) {
-      alert("GitHub Access Token이 설정되어 있지 않습니다.\n\n여러 부원이 공유하여 저장하려면, 관리자가 app.js 소스코드 최상단 REVERSED_GITHUB_TOKEN에 뒤집어 놓은 토큰을 입력해야 합니다.");
-      return;
-    }
-
     overlayLoader.classList.add('active');
     closeLoaderBtn.style.display = 'none';
     
-    updateLoaderState('스쿼드 저장 중...', 'GitHub 저장소에 직접 스쿼드 파일을 커밋하고 있습니다.', 'loading');
+    updateLoaderState('스쿼드 저장 중...', '로컬 서버를 통해 데이터를 보관하고 GitHub로 업로드하고 있습니다.', 'loading');
 
     const playersPayload = [];
     const currentSlots = formations[activeFormation] || [];
@@ -588,64 +541,38 @@ function setupSaveButton() {
     const payload = {
       name: squadName,
       tactics: activeFormation,
-      players: playersPayload,
-      updatedAt: new Date().toISOString()
+      players: playersPayload
     };
 
-    const filePath = `data/formations/${squadName}.json`;
-    const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${filePath}`;
-
     try {
-      // 1. Get SHA hash of the file if it already exists (to overwrite)
-      let sha = null;
-      try {
-        const fileCheckUrl = `${apiUrl}?t=${Date.now()}`;
-        const checkRes = await fetch(fileCheckUrl, {
-          headers: getGithubHeaders(false) // Read operation
-        });
-        if (checkRes.ok) {
-          const checkData = await checkRes.json();
-          sha = checkData.sha;
-        }
-      } catch (checkErr) {
-        console.log('File does not exist yet. Creating a new one.');
-      }
-
-      // 2. Commit and push directly to GitHub using PUT API
-      const contentBase64 = utf8_to_b64(JSON.stringify(payload, null, 2));
-      const body = {
-        message: `Save squad: ${squadName} (${new Date().toLocaleString()})`,
-        content: contentBase64
-      };
-      if (sha) {
-        body.sha = sha; // Overwrite
-      }
-
-      const saveRes = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: getGithubHeaders(true), // Write operation (Requires auth)
-        body: JSON.stringify(body)
+      const res = await fetch(`${API_BASE}/api/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-      if (!saveRes.ok) {
-        const errData = await saveRes.json();
-        throw new Error(errData.message || 'GitHub API error');
-      }
-
-      // Refresh list
-      await fetchFormationsList(squadName);
+      if (!res.ok) throw new Error('API server returned error');
       
-      updateLoaderState(
-        '저장 완료!', 
-        `"${squadName}" 스쿼드가 성공적으로 기록되었습니다. (GitHub 자동 동기화 완료)`, 
-        'success'
-      );
+      const result = await res.json();
+
+      if (result.success) {
+        // Refresh list
+        await fetchFormationsList(squadName);
+        
+        updateLoaderState(
+          '저장 완료!', 
+          `"${squadName}" 스쿼드가 성공적으로 기록되었습니다. (GitHub 백업 완료)`, 
+          'success'
+        );
+      } else {
+        throw new Error(result.message || 'Unknown save error');
+      }
 
     } catch (err) {
       console.error(err);
       updateLoaderState(
         '저장 실패', 
-        `오류가 발생했습니다: ${err.message || '네트워크 상태를 확인하세요.'}`, 
+        `오류가 발생했습니다: ${err.message || '로컬 서버가 실행 중인지 확인하세요.'}`, 
         'error'
       );
     } finally {

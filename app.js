@@ -124,6 +124,10 @@ let quarters = {
 let activeFormation = '4-4-2';
 let placedPlayers = {};
 
+// Click-to-Place State Tracker
+// Stores: null OR { id: number, name: string, fromSlotId: string | null }
+let selectedPlayerForPlacement = null;
+
 // DOM Elements
 const pitch = document.getElementById('pitch');
 const guidesOverlay = document.getElementById('guidesOverlay');
@@ -143,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDragAndDrop();
   setupSearch();
   setupResetButton();
+  setupOutsideClickCancel();
   
   // Render initial quarter
   renderCurrentQuarter();
@@ -155,6 +160,9 @@ function setupQuarterTabs() {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
+
+      // Clear any pending selection on quarter change
+      cancelPlacementSelection();
 
       // Save current state in memory
       quarters[currentQuarter] = {
@@ -217,13 +225,30 @@ function renderSquadList(searchTerm = '') {
       card.draggable = false;
     }
 
+    // Apply selected styling if this player is chosen for Click-to-Place
+    if (selectedPlayerForPlacement && 
+        selectedPlayerForPlacement.id === player.id && 
+        selectedPlayerForPlacement.fromSlotId === null) {
+      card.classList.add('selected');
+    }
+
     card.innerHTML = `
       <span class="player-card-icon">👕</span>
       <span class="player-card-name" title="${player.name}">${player.name}</span>
     `;
 
+    // 1. Drag Start
     card.addEventListener('dragstart', handleDragStart);
+    
+    // 2. Mobile touch dragging
     setupMobileTouchForCard(card);
+
+    // 3. Click-to-Place (Selection trigger)
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isPlaced) return;
+      handleSquadPlayerClick(player, card);
+    });
 
     squadList.appendChild(card);
   });
@@ -242,14 +267,26 @@ function renderPitchGuides() {
     el.style.top = `${slot.y}%`;
     el.dataset.slotId = slot.id;
 
+    // Show awaiting glow if a player is selected to be placed
+    if (selectedPlayerForPlacement) {
+      el.classList.add('awaiting-placement');
+    }
+
     el.innerHTML = `
       <span class="position-slot-label">${slot.label}</span>
       <span class="position-slot-role">${slot.role || ''}</span>
     `;
 
+    // Drag drop events
     el.addEventListener('dragover', handleDragOver);
     el.addEventListener('dragleave', handleDragLeave);
     el.addEventListener('drop', handleDrop);
+
+    // Click/Touch-to-Place slot placement
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleSlotClick(slot.id);
+    });
 
     guidesOverlay.appendChild(el);
   });
@@ -262,26 +299,33 @@ function renderPlacedPlayers() {
 
   currentSlots.forEach(slot => {
     const player = placedPlayers[slot.id];
-    if (!player) return; // Empty slot
+    if (!player) return;
 
     const el = document.createElement('div');
-    
-    // Determine neon light color based on position slot ID
-    let neonClass = 'neon-mf'; // Default mid-fielder (green)
-    const sid = slot.id.toLowerCase();
-    if (sid.includes('gk')) {
-      neonClass = 'neon-gk'; // Keeper (yellow)
-    } else if (sid.includes('cb') || sid.includes('lb') || sid.includes('rb') || sid.includes('wb')) {
-      neonClass = 'neon-df'; // Defender (blue)
-    } else if (sid.includes('st') || sid.includes('st') || sid.includes('lw') || sid.includes('rw') || sid === 'ls' || sid === 'rs') {
-      neonClass = 'neon-fw'; // Forward (red)
-    }
-
-    el.className = `placed-player ${neonClass}`;
     el.style.left = `${slot.x}%`;
     el.style.top = `${slot.y}%`;
     el.dataset.slotId = slot.id;
     el.dataset.playerId = player.id;
+
+    // Determine position specific neon class
+    let neonClass = 'neon-mf'; 
+    const sid = slot.id.toLowerCase();
+    if (sid.includes('gk')) {
+      neonClass = 'neon-gk'; 
+    } else if (sid.includes('cb') || sid.includes('lb') || sid.includes('rb') || sid.includes('wb')) {
+      neonClass = 'neon-df'; 
+    } else if (sid.includes('st') || sid.includes('st') || sid.includes('lw') || sid.includes('rw') || sid === 'ls' || sid === 'rs') {
+      neonClass = 'neon-fw'; 
+    }
+
+    el.className = `placed-player ${neonClass}`;
+
+    // Apply selection styling if this placed player is selected for moving
+    if (selectedPlayerForPlacement && 
+        selectedPlayerForPlacement.id === player.id && 
+        selectedPlayerForPlacement.fromSlotId === slot.id) {
+      el.classList.add('selected');
+    }
 
     el.innerHTML = `
       <div class="placed-player-card"></div>
@@ -289,13 +333,20 @@ function renderPlacedPlayers() {
       <button class="remove-player-btn" title="제거">×</button>
     `;
 
+    // Remove
     el.querySelector('.remove-player-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       removePlayer(slot.id);
     });
 
-    // Touch event for moving already placed player on mobile
+    // Mobile touch drag
     setupMobileTouchForPlacedPlayer(el, slot.id, player);
+
+    // Click/Touch-to-Place (Select placed player to move)
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handlePlacedPlayerClick(player, slot.id);
+    });
 
     playersOverlay.appendChild(el);
   });
@@ -304,6 +355,11 @@ function renderPlacedPlayers() {
 // Remove Player from Slot
 function removePlayer(slotId) {
   if (placedPlayers[slotId]) {
+    // If the removed player was currently selected, cancel selection
+    if (selectedPlayerForPlacement && selectedPlayerForPlacement.fromSlotId === slotId) {
+      cancelPlacementSelection();
+    }
+    
     delete placedPlayers[slotId];
     quarters[currentQuarter].placedPlayers = { ...placedPlayers };
 
@@ -349,6 +405,7 @@ function setupTacticsButtons() {
       quarters[currentQuarter].tactics = activeFormation;
       quarters[currentQuarter].placedPlayers = { ...placedPlayers };
 
+      // Maintain selection state during tactics change
       renderPitchGuides();
       renderPlacedPlayers();
       renderSquadList(playerSearch.value);
@@ -367,6 +424,7 @@ function setupSearch() {
 let draggedPlayer = null;
 
 function handleDragStart(e) {
+  cancelPlacementSelection(); // cancel click selection when drag starts
   draggedPlayer = {
     id: parseInt(this.dataset.id),
     name: this.dataset.name
@@ -375,6 +433,7 @@ function handleDragStart(e) {
   e.dataTransfer.effectAllowed = 'move';
 }
 
+// Drag and Drop implementation
 function setupDragAndDrop() {
   pitch.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -402,6 +461,7 @@ function handleDrop(e) {
 }
 
 function placePlayerInSlot(player, slotId) {
+  // Prevent duplicate
   Object.keys(placedPlayers).forEach(sid => {
     if (placedPlayers[sid].id === player.id) {
       delete placedPlayers[sid];
@@ -409,6 +469,8 @@ function placePlayerInSlot(player, slotId) {
   });
 
   placedPlayers[slotId] = player;
+
+  // Sync memory
   quarters[currentQuarter].placedPlayers = { ...placedPlayers };
 
   renderPlacedPlayers();
@@ -416,12 +478,106 @@ function placePlayerInSlot(player, slotId) {
 }
 
 // ==========================================================================
-// Mobile Touch Drag and Drop Implementation (Optimized for Mobile)
+// Click-to-Place & Touch-to-Place Feature Handlers (Hybrid Mode)
+// ==========================================================================
+
+// 1. Click on waiting list player card
+function handleSquadPlayerClick(player, cardEl) {
+  // If clicked the already selected player, cancel selection
+  if (selectedPlayerForPlacement && 
+      selectedPlayerForPlacement.id === player.id && 
+      selectedPlayerForPlacement.fromSlotId === null) {
+    cancelPlacementSelection();
+    return;
+  }
+
+  // Set selected player
+  selectedPlayerForPlacement = {
+    id: player.id,
+    name: player.name,
+    fromSlotId: null
+  };
+
+  // Re-render UI to show selection highlights and awaiting guides
+  renderSquadList(playerSearch.value);
+  renderPitchGuides();
+  renderPlacedPlayers();
+}
+
+// 2. Click on placed player inside pitch (prepare for movement)
+function handlePlacedPlayerClick(player, slotId) {
+  // If clicked the already selected placed player, cancel selection
+  if (selectedPlayerForPlacement && 
+      selectedPlayerForPlacement.id === player.id && 
+      selectedPlayerForPlacement.fromSlotId === slotId) {
+    cancelPlacementSelection();
+    return;
+  }
+
+  // Set selected player for relocation
+  selectedPlayerForPlacement = {
+    id: player.id,
+    name: player.name,
+    fromSlotId: slotId
+  };
+
+  renderSquadList(playerSearch.value);
+  renderPitchGuides();
+  renderPlacedPlayers();
+}
+
+// 3. Click on a pitch position slot
+function handleSlotClick(slotId) {
+  if (!selectedPlayerForPlacement) return;
+
+  const player = {
+    id: selectedPlayerForPlacement.id,
+    name: selectedPlayerForPlacement.name
+  };
+
+  // If this is a relocation, remove player from the previous slot
+  if (selectedPlayerForPlacement.fromSlotId) {
+    delete placedPlayers[selectedPlayerForPlacement.fromSlotId];
+  }
+
+  // Place player in the new slot
+  placePlayerInSlot(player, slotId);
+
+  // Clear selection
+  cancelPlacementSelection();
+}
+
+// Cancel current selection
+function cancelPlacementSelection() {
+  if (selectedPlayerForPlacement === null) return;
+  selectedPlayerForPlacement = null;
+  
+  renderSquadList(playerSearch.value);
+  renderPitchGuides();
+  renderPlacedPlayers();
+}
+
+// Cancel selection when clicking outside pitch slots and player cards
+function setupOutsideClickCancel() {
+  document.addEventListener('click', (e) => {
+    // If clicked element is not a position slot, player card, or placed player, cancel selection
+    if (!e.target.closest('.position-slot') && 
+        !e.target.closest('.player-card') && 
+        !e.target.closest('.placed-player') && 
+        !e.target.closest('.quarter-btn') && 
+        !e.target.closest('.tactics-btn') &&
+        !e.target.closest('.reset-button')) {
+      cancelPlacementSelection();
+    }
+  });
+}
+
+// ==========================================================================
+// Mobile Touch Drag and Drop Implementation
 // ==========================================================================
 let touchDragEl = null;
 let touchActiveSlot = null;
 
-// Find which slot boundary contains the current touch coordinates (Highly accurate client rect mapping)
 function findSlotAtPoint(clientX, clientY) {
   let matchedSlot = null;
   const slots = document.querySelectorAll('.position-slot');
@@ -437,12 +593,14 @@ function findSlotAtPoint(clientX, clientY) {
   return matchedSlot;
 }
 
-// 1. Mobile touch for players in the waiting pool list
+// Mobile touch dragging for pool list players
 function setupMobileTouchForCard(card) {
   card.addEventListener('touchstart', function(e) {
     if (card.classList.contains('placed')) return;
 
-    // Prevent screen scrolling and zoom behaviors while dragging
+    // Clear click selection when drag starts
+    cancelPlacementSelection();
+
     e.preventDefault();
     e.stopPropagation();
 
@@ -451,10 +609,8 @@ function setupMobileTouchForCard(card) {
       name: card.dataset.name
     };
 
-    // Create a floating clone at finger position
     createTouchFloatingClone(playerData.name, e.touches[0].clientX, e.touches[0].clientY);
 
-    // Highlight slots
     document.querySelectorAll('.position-slot').forEach(s => {
       s.style.borderColor = 'var(--accent-color)';
     });
@@ -464,7 +620,6 @@ function setupMobileTouchForCard(card) {
       const currentTouch = moveEvent.touches[0];
       moveTouchDragEl(currentTouch.clientX, currentTouch.clientY);
       
-      // Check active slot using optimized bounding rect calculation
       const slot = findSlotAtPoint(currentTouch.clientX, currentTouch.clientY);
       if (touchActiveSlot) {
         touchActiveSlot.classList.remove('drag-over');
@@ -481,7 +636,6 @@ function setupMobileTouchForCard(card) {
 
       removeTouchFloatingClone();
 
-      // Reset slot highlighting
       document.querySelectorAll('.position-slot').forEach(s => {
         s.style.borderColor = '';
         s.classList.remove('drag-over');
@@ -498,20 +652,18 @@ function setupMobileTouchForCard(card) {
   }, { passive: false });
 }
 
-// 2. Mobile touch for moving already placed players within the pitch
+// Mobile touch dragging for already placed players
 function setupMobileTouchForPlacedPlayer(placedEl, currentSlotId, player) {
   placedEl.addEventListener('touchstart', function(e) {
-    // Prevent default scroll and bubble
+    // Clear click selection when drag starts
+    cancelPlacementSelection();
+
     e.preventDefault();
     e.stopPropagation();
 
-    // Create floating clone at touch position
     createTouchFloatingClone(player.name, e.touches[0].clientX, e.touches[0].clientY);
-
-    // Temporarily hide current placed player to simulate drag
     placedEl.style.opacity = '0.2';
 
-    // Highlight slots
     document.querySelectorAll('.position-slot').forEach(s => {
       s.style.borderColor = 'var(--accent-color)';
     });
@@ -538,7 +690,6 @@ function setupMobileTouchForPlacedPlayer(placedEl, currentSlotId, player) {
       removeTouchFloatingClone();
       placedEl.style.opacity = '1';
 
-      // Reset slot highlighting
       document.querySelectorAll('.position-slot').forEach(s => {
         s.style.borderColor = '';
         s.classList.remove('drag-over');
@@ -546,22 +697,15 @@ function setupMobileTouchForPlacedPlayer(placedEl, currentSlotId, player) {
 
       if (touchActiveSlot) {
         const newSlotId = touchActiveSlot.dataset.slotId;
-        
-        // Remove from old slot
         delete placedPlayers[currentSlotId];
-        
-        // Place in new slot (automatically handles replacement or swap)
         placePlayerInSlot(player, newSlotId);
-        
         touchActiveSlot = null;
       } else {
-        // If dropped outside, check if touch ended far outside the pitch to remove the player
         const pitchRect = pitch.getBoundingClientRect();
         const touch = endEvent.changedTouches[0];
         
         if (touch.clientX < pitchRect.left || touch.clientX > pitchRect.right ||
             touch.clientY < pitchRect.top || touch.clientY > pitchRect.bottom) {
-          // Dropped outside pitch -> remove player
           removePlayer(currentSlotId);
         }
       }
@@ -572,7 +716,6 @@ function setupMobileTouchForPlacedPlayer(placedEl, currentSlotId, player) {
   }, { passive: false });
 }
 
-// Helpers for Touch Drag Clones
 function createTouchFloatingClone(name, clientX, clientY) {
   if (touchDragEl) touchDragEl.remove();
 
@@ -598,7 +741,6 @@ function createTouchFloatingClone(name, clientX, clientY) {
 
 function moveTouchDragEl(clientX, clientY) {
   if (touchDragEl) {
-    // Center the clone on the finger
     touchDragEl.style.left = `${clientX - 27}px`;
     touchDragEl.style.top = `${clientY - 27}px`;
   }

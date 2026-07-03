@@ -88,36 +88,14 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* Git Status Badge */
-.git-status-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.subtitle-area {
   background-color: var(--bg-tertiary);
-  padding: 0.5rem 1rem;
-  border-radius: 30px;
-  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--warning-color);
-  box-shadow: 0 0 8px var(--warning-color);
-  transition: var(--transition-smooth);
-}
-
-.status-dot.connected {
-  background-color: var(--accent-color);
-  box-shadow: 0 0 8px var(--accent-color);
-}
-
-.status-dot.error {
-  background-color: var(--danger-color);
-  box-shadow: 0 0 8px var(--danger-color);
+  color: var(--accent-color);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 /* Main Workspace */
@@ -426,6 +404,34 @@ body {
   margin-bottom: 0;
 }
 
+/* Load Squad selector styling */
+.squad-select {
+  width: 100%;
+  background-color: var(--bg-tertiary);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--border-radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  
+  /* Custom arrow */
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.squad-select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+}
+
 /* Tactics Selector Grid */
 .tactics-buttons {
   display: grid;
@@ -648,22 +654,6 @@ body {
 .loader-content p {
   color: var(--text-secondary);
   font-size: 0.95rem;
-}
-
-.console-box {
-  background-color: var(--bg-primary);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--border-radius-sm);
-  padding: 0.75rem;
-  width: 100%;
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: #10b981;
-  text-align: left;
-  max-height: 150px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  display: none;
 }
 
 .close-loader-btn {

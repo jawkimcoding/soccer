@@ -17,7 +17,7 @@ const formations = {
     { id: 'gk', label: 'GK', role: '골키퍼', x: 50, y: 90 },
     { id: 'lb', label: 'LB', role: '좌측 수비수', x: 15, y: 70 },
     { id: 'lcb', label: 'LCB', role: '좌중앙 수비수', x: 38, y: 72 },
-    { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 62, y: 72 },
+    { id: 'rcb', role: 'RCB', role: '우중앙 수비수', x: 62, y: 72 },
     { id: 'rb', label: 'RB', role: '우측 수비수', x: 85, y: 70 },
     { id: 'dm', label: 'DM', role: '수비형 미드필더', x: 50, y: 58 },
     { id: 'lcm', label: 'LCM', role: '좌중앙 미드필더', x: 30, y: 44 },
@@ -46,7 +46,7 @@ const formations = {
     { id: 'rcb', label: 'RCB', role: '우중앙 수비수', x: 62, y: 72 },
     { id: 'rb', label: 'RB', role: '우측 수비수', x: 85, y: 70 },
     { id: 'ldm', label: 'LDM', role: '좌측 수미', x: 35, y: 55 },
-    { id: 'rdm', role: 'RDM', role: '우측 수미', x: 65, y: 55 },
+    { id: 'rdm', label: 'RDM', role: '우측 수미', x: 65, y: 55 },
     { id: 'lam', label: 'LAM', role: '좌측 공미', x: 20, y: 35 },
     { id: 'cam', label: 'CAM', role: '중앙 공미', x: 50, y: 32 },
     { id: 'ram', label: 'RAM', role: '우측 공미', x: 80, y: 35 },
@@ -71,7 +71,7 @@ const formations = {
 let squad = [];
 let activeFormation = '4-4-2';
 let placedPlayers = {}; // slotId -> playerObject { id, name }
-let gitConfigured = false;
+let selectedSquadName = ''; // currently loaded squad file name
 
 // DOM Elements
 const pitch = document.getElementById('pitch');
@@ -80,12 +80,11 @@ const playersOverlay = document.getElementById('playersOverlay');
 const squadList = document.getElementById('squadList');
 const squadCount = document.getElementById('squadCount');
 const playerSearch = document.getElementById('playerSearch');
-const gitStatus = document.getElementById('gitStatus');
+const squadSelector = document.getElementById('squadSelector');
 const saveBtn = document.getElementById('saveBtn');
 const overlayLoader = document.getElementById('overlayLoader');
 const loaderTitle = document.getElementById('loaderTitle');
 const loaderDesc = document.getElementById('loaderDesc');
-const consoleBox = document.getElementById('consoleBox');
 const closeLoaderBtn = document.getElementById('closeLoaderBtn');
 
 // Initialize App
@@ -94,12 +93,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupDragAndDrop();
   setupSearch();
   setupSaveButton();
+  setupSquadSelector();
   
   await fetchSquad();
-  await fetchFormation();
+  await fetchFormationsList();
+  
+  // Default pitch setup
+  renderPitchGuides();
+  renderPlacedPlayers();
 });
 
-// 1. Fetch Squad from Server
+// 1. Fetch Squad List from Server
 async function fetchSquad() {
   try {
     const res = await fetch('/api/squad');
@@ -114,12 +118,52 @@ async function fetchSquad() {
   }
 }
 
-// 2. Fetch Saved Formation from Server
-async function fetchFormation() {
+// 2. Fetch List of Saved Formations
+async function fetchFormationsList(selectNameAfterFetch = '') {
   try {
-    const res = await fetch('/api/formation');
-    if (!res.ok) throw new Error('Failed to fetch formation');
+    const res = await fetch('/api/formations');
+    if (!res.ok) throw new Error('Failed to fetch formations list');
+    const list = await res.json();
+    
+    // Clear old options except the first one
+    squadSelector.innerHTML = '<option value="">-- 새 스쿼드 작성 --</option>';
+    
+    list.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      squadSelector.appendChild(opt);
+    });
+
+    if (selectNameAfterFetch) {
+      squadSelector.value = selectNameAfterFetch;
+      selectedSquadName = selectNameAfterFetch;
+    } else {
+      squadSelector.value = selectedSquadName;
+    }
+  } catch (err) {
+    console.error('Failed to load formations list:', err);
+  }
+}
+
+// 3. Load Selected Squad Data
+async function loadSquadData(name) {
+  if (!name) {
+    // Reset to empty board
+    placedPlayers = {};
+    selectedSquadName = '';
+    renderPitchGuides();
+    renderPlacedPlayers();
+    renderSquadList(playerSearch.value);
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/formations/${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error('Failed to fetch squad data');
     const data = await res.json();
+    
+    selectedSquadName = name;
     
     if (data.tactics && formations[data.tactics]) {
       activeFormation = data.tactics;
@@ -145,15 +189,20 @@ async function fetchFormation() {
 
     renderPitchGuides();
     renderPlacedPlayers();
-    renderSquadList(); // update status in the list
+    renderSquadList(playerSearch.value);
   } catch (err) {
-    console.error('Failed to load saved formation:', err);
-    renderPitchGuides();
-    renderPlacedPlayers();
+    console.error('Failed to load squad data:', err);
+    alert('스쿼드 데이터를 불러오는 데 실패했습니다.');
   }
 }
 
-// 3. Render Squad List
+function setupSquadSelector() {
+  squadSelector.addEventListener('change', (e) => {
+    loadSquadData(e.target.value);
+  });
+}
+
+// 4. Render Squad List Pool
 function renderSquadList(searchTerm = '') {
   squadList.innerHTML = '';
   const filtered = squad.filter(player => 
@@ -196,7 +245,7 @@ function renderSquadList(searchTerm = '') {
   });
 }
 
-// 4. Render Pitch Slots/Guides
+// 5. Render Pitch Slots/Guides
 function renderPitchGuides() {
   guidesOverlay.innerHTML = '';
   const currentSlots = formations[activeFormation] || [];
@@ -223,7 +272,7 @@ function renderPitchGuides() {
   });
 }
 
-// 5. Render Placed Players on Pitch
+// 6. Render Placed Players on Pitch
 function renderPlacedPlayers() {
   playersOverlay.innerHTML = '';
   const currentSlots = formations[activeFormation] || [];
@@ -245,7 +294,6 @@ function renderPlacedPlayers() {
       <button class="remove-player-btn" title="제거">×</button>
     `;
 
-    // Remove event
     el.querySelector('.remove-player-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       removePlayer(slot.id);
@@ -255,7 +303,7 @@ function renderPlacedPlayers() {
   });
 }
 
-// 6. Remove Player from Slot
+// 7. Remove Player from Slot
 function removePlayer(slotId) {
   if (placedPlayers[slotId]) {
     delete placedPlayers[slotId];
@@ -264,7 +312,7 @@ function removePlayer(slotId) {
   }
 }
 
-// 7. Change Tactics Formation
+// 8. Change Tactics Formation
 function setupTacticsButtons() {
   const buttons = document.querySelectorAll('.tactics-btn');
   buttons.forEach(btn => {
@@ -276,11 +324,10 @@ function setupTacticsButtons() {
       const newFormationName = btn.dataset.formation;
       const newFormationSlots = formations[newFormationName] || [];
 
-      // Smart migration of players to new slots based on position codes
+      // Smart migration
       const oldPlaced = { ...placedPlayers };
       placedPlayers = {};
 
-      // Match common slots by position ID (e.g. gk -> gk, lcb -> lcb)
       newFormationSlots.forEach(slot => {
         if (oldPlaced[slot.id]) {
           placedPlayers[slot.id] = oldPlaced[slot.id];
@@ -288,7 +335,6 @@ function setupTacticsButtons() {
         }
       });
 
-      // For remaining unmapped players, try to put them in other empty slots of the same type/area
       const remainingPlayers = Object.values(oldPlaced);
       if (remainingPlayers.length > 0) {
         newFormationSlots.forEach(slot => {
@@ -306,14 +352,14 @@ function setupTacticsButtons() {
   });
 }
 
-// 8. Search Functionality
+// 9. Search Functionality
 function setupSearch() {
   playerSearch.addEventListener('input', (e) => {
     renderSquadList(e.target.value);
   });
 }
 
-// 9. Desktop Drag and Drop Logic
+// 10. Desktop Drag and Drop Logic
 let draggedPlayer = null;
 
 function handleDragStart(e) {
@@ -346,7 +392,6 @@ function handleDrop(e) {
 }
 
 function placePlayerInSlot(player, slotId) {
-  // If player is already placed elsewhere, remove them first (to prevent duplicating)
   Object.keys(placedPlayers).forEach(sid => {
     if (placedPlayers[sid].id === player.id) {
       delete placedPlayers[sid];
@@ -358,7 +403,7 @@ function placePlayerInSlot(player, slotId) {
   renderSquadList(playerSearch.value);
 }
 
-// 10. Mobile Touch Drag and Drop Implementation
+// 11. Mobile Touch Drag and Drop Implementation
 let touchDragEl = null;
 let touchActiveSlot = null;
 
@@ -366,7 +411,6 @@ function setupMobileTouchForCard(card) {
   card.addEventListener('touchstart', function(e) {
     if (card.classList.contains('placed')) return;
 
-    // Prevent default scrolling when starting drag
     e.stopPropagation();
 
     const playerData = {
@@ -391,17 +435,14 @@ function setupMobileTouchForCard(card) {
     touchDragEl.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
     touchDragEl.innerHTML = '👕';
 
-    // Move clone to finger position
     const touch = e.touches[0];
     moveTouchDragEl(touch.clientX, touch.clientY);
     document.body.appendChild(touchDragEl);
 
-    // Highlight slots
     document.querySelectorAll('.position-slot').forEach(s => {
       s.style.borderColor = 'var(--accent-color)';
     });
 
-    // Handle touch movement
     const touchMoveHandler = function(moveEvent) {
       moveEvent.preventDefault();
       const currentTouch = moveEvent.touches[0];
@@ -409,7 +450,6 @@ function setupMobileTouchForCard(card) {
       checkActiveSlotUnderTouch(currentTouch.clientX, currentTouch.clientY);
     };
 
-    // Handle touch end
     const touchEndHandler = function(endEvent) {
       document.removeEventListener('touchmove', touchMoveHandler);
       document.removeEventListener('touchend', touchEndHandler);
@@ -419,7 +459,6 @@ function setupMobileTouchForCard(card) {
         touchDragEl = null;
       }
 
-      // Reset slots style
       document.querySelectorAll('.position-slot').forEach(s => {
         s.style.borderColor = '';
         s.classList.remove('drag-over');
@@ -444,13 +483,11 @@ function moveTouchDragEl(clientX, clientY) {
 }
 
 function checkActiveSlotUnderTouch(clientX, clientY) {
-  // Clear old active slot highlights
   if (touchActiveSlot) {
     touchActiveSlot.classList.remove('drag-over');
     touchActiveSlot = null;
   }
 
-  // Find slot element under touch coordinates
   const elements = document.elementsFromPoint(clientX, clientY);
   const slot = elements.find(el => el.classList.contains('position-slot'));
 
@@ -460,16 +497,30 @@ function checkActiveSlotUnderTouch(clientX, clientY) {
   }
 }
 
-// 11. Save and Git Push Integration
+// 12. Save and Git Push Integration
 function setupSaveButton() {
   saveBtn.addEventListener('click', async () => {
+    // Generate default squad name based on date: YYYY-MM-DD 스쿼드
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    const defaultSquadName = selectedSquadName || `${formattedDate} 스쿼드`;
+
+    // Prompt for squad name
+    const squadNameInput = prompt('저장할 스쿼드 이름을 입력하세요:', defaultSquadName);
+    
+    if (squadNameInput === null) return; // user cancelled
+    
+    const squadName = squadNameInput.trim();
+    if (!squadName) {
+      alert('스쿼드 이름을 올바르게 입력해주세요.');
+      return;
+    }
+
     // Show loading overlay
     overlayLoader.classList.add('active');
     closeLoaderBtn.style.display = 'none';
-    consoleBox.style.display = 'none';
-    consoleBox.innerHTML = '';
     
-    updateLoaderState('저장 중...', '포메이션 정보를 JSON 데이터로 작성하고 있습니다.', 'loading');
+    updateLoaderState('스쿼드 저장 중...', '서버에 스쿼드와 포메이션 구성을 기록하고 있습니다.', 'loading');
 
     // Build payload
     const playersPayload = [];
@@ -487,15 +538,12 @@ function setupSaveButton() {
     });
 
     const payload = {
+      name: squadName,
       tactics: activeFormation,
       players: playersPayload
     };
 
     try {
-      updateLoaderState('깃허브 푸시 중...', '원격 깃허브 저장소(soccer.git)에 자동으로 변경사항을 동기화하고 있습니다.', 'loading');
-      consoleBox.style.display = 'block';
-      logToConsole('Saving formation.json locally...\n');
-
       const res = await fetch('/api/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -505,18 +553,14 @@ function setupSaveButton() {
       if (!res.ok) throw new Error('API server returned error');
       
       const result = await res.json();
-      logToConsole(`Server response: ${result.message}\n`);
 
       if (result.success) {
-        const connectedBadge = document.querySelector('.status-dot');
-        connectedBadge.className = 'status-dot connected';
-        document.querySelector('.status-text').textContent = 'GitHub 동기화 완료';
-
+        // Refresh dropdown list and select the saved squad
+        await fetchFormationsList(squadName);
+        
         updateLoaderState(
-          '동기화 성공!', 
-          result.gitPushed 
-            ? '포메이션이 저장되었으며 GitHub에 푸시 완료되었습니다.' 
-            : '포메이션이 저장되었습니다. (원격지 변경사항 없음)', 
+          '저장 완료!', 
+          `"${squadName}" 스쿼드가 성공적으로 기록되었습니다.`, 
           'success'
         );
       } else {
@@ -525,12 +569,6 @@ function setupSaveButton() {
 
     } catch (err) {
       console.error(err);
-      logToConsole(`Error: ${err.message || err}\n`);
-      
-      const errorBadge = document.querySelector('.status-dot');
-      errorBadge.className = 'status-dot error';
-      document.querySelector('.status-text').textContent = '동기화 실패';
-
       updateLoaderState(
         '저장 실패', 
         `오류가 발생했습니다: ${err.message || '네트워크 상태를 확인하세요.'}`, 
@@ -555,14 +593,7 @@ function updateLoaderState(title, desc, status) {
     spinner.style.display = 'block';
     spinner.style.borderColor = 'rgba(16, 185, 129, 0.1)';
     spinner.style.borderTopColor = 'var(--accent-color)';
-  } else if (status === 'success') {
-    spinner.style.display = 'none';
-  } else if (status === 'error') {
+  } else if (status === 'success' || status === 'error') {
     spinner.style.display = 'none';
   }
-}
-
-function logToConsole(text) {
-  consoleBox.innerHTML += text;
-  consoleBox.scrollTop = consoleBox.scrollHeight;
 }

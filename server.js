@@ -12,12 +12,15 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const SQUAD_FILE = path.join(__dirname, 'data', 'squad.json');
-const FORMATION_FILE = path.join(__dirname, 'data', 'formation.json');
+const FORMATIONS_DIR = path.join(__dirname, 'data', 'formations');
 
-// Ensure data directory exists
+// Ensure data & formations directories exist
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
+}
+if (!fs.existsSync(FORMATIONS_DIR)) {
+  fs.mkdirSync(FORMATIONS_DIR, { recursive: true });
 }
 
 // Helper to run shell commands as promises
@@ -72,60 +75,92 @@ app.get('/api/squad', (req, res) => {
   });
 });
 
-// 2. Get Current Formation
-app.get('/api/formation', (req, res) => {
-  if (!fs.existsSync(FORMATION_FILE)) {
-    return res.json({ tactics: '4-4-2', players: [] });
+// 2. Get All Saved Formations (List of names)
+app.get('/api/formations', (req, res) => {
+  fs.readdir(FORMATIONS_DIR, (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to read formations directory' });
+    }
+    // Filter only .json files and remove extension
+    const formationNames = files
+      .filter(file => file.endsWith('.json'))
+      .map(file => path.basename(file, '.json'));
+    res.json(formationNames);
+  });
+});
+
+// 3. Get Specific Formation
+app.get('/api/formations/:name', (req, res) => {
+  const name = req.params.name;
+  // Prevent path traversal
+  const safeName = path.basename(name);
+  const filePath = path.join(FORMATIONS_DIR, `${safeName}.json`);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Formation not found' });
   }
-  fs.readFile(FORMATION_FILE, 'utf8', (err, data) => {
+
+  fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to read formation file' });
     }
     try {
       res.json(JSON.parse(data));
     } catch (parseErr) {
-      res.json({ tactics: '4-4-2', players: [] });
+      res.status(500).json({ error: 'Invalid formation file format' });
     }
   });
 });
 
-// 3. Save Formation and Push to GitHub
+// 4. Save Formation and Push to GitHub (Silent Push)
 app.post('/api/save', async (req, res) => {
-  const formationData = req.body; // { tactics: string, players: [{ id, name, positionCode, x, y }] }
+  const { name, tactics, players } = req.body;
 
-  if (!formationData) {
-    return res.status(400).json({ error: 'Invalid formation data' });
+  if (!name || !tactics || !players) {
+    return res.status(400).json({ error: 'Invalid formation data. "name", "tactics", and "players" are required.' });
   }
 
+  // Prevent path traversal and clean name
+  const safeName = path.basename(name).trim();
+  if (!safeName) {
+    return res.status(400).json({ error: 'Invalid squad name' });
+  }
+
+  const filePath = path.join(FORMATIONS_DIR, `${safeName}.json`);
+  const formationData = { name: safeName, tactics, players, updatedAt: new Date().toISOString() };
+
   // Save to file
-  fs.writeFile(FORMATION_FILE, JSON.stringify(formationData, null, 2), 'utf8', async (err) => {
+  fs.writeFile(filePath, JSON.stringify(formationData, null, 2), 'utf8', async (err) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to save formation file locally' });
     }
 
-    console.log('Saved formation locally. Starting Git Push process...');
+    console.log(`Saved formation "${safeName}" locally. Starting Git Push process...`);
 
     try {
-      // 1. Ensure git config is set (so commit doesn't fail)
+      // 1. Ensure git config is set
       await ensureGitConfig();
 
       // 2. Git status check to see if there are actual changes
-      const statusOutput = await runCommand('git status --porcelain data/formation.json');
+      const gitPath = `data/formations/${safeName}.json`;
+      const statusOutput = await runCommand(`git status --porcelain "${gitPath}"`);
       
-      if (!statusOutput) {
-        console.log('No changes detected in formation.json. Skipping git push.');
+      // Even if statusOutput is empty, it might be an untracked new file. Check if untracked.
+      const isNewFile = await runCommand(`git status --porcelain "${gitPath}"`).then(out => out.includes('??'));
+
+      if (!statusOutput && !isNewFile) {
+        console.log(`No changes detected in ${gitPath}. Skipping git push.`);
         return res.json({ 
           success: true, 
-          message: '로컬에 포메이션이 저장되었습니다. (변경 사항 없음 - Git 푸시 생략)',
+          message: `"${safeName}" 스쿼드가 로컬에 저장되었습니다. (변경 사항 없음)`,
           gitPushed: false 
         });
       }
 
       // 3. Add, Commit and Push
-      await runCommand('git add data/formation.json');
+      await runCommand(`git add "${gitPath}"`);
       
-      const tacticsName = formationData.tactics || 'Custom';
-      const commitMessage = `Update formation: ${tacticsName} (${new Date().toLocaleString()})`;
+      const commitMessage = `Save squad: ${safeName} (${new Date().toLocaleString()})`;
       await runCommand(`git commit -m "${commitMessage}"`);
       
       // Get current branch name
@@ -137,23 +172,22 @@ app.post('/api/save', async (req, res) => {
       }
 
       console.log(`Pushing to branch: ${branchName}`);
-      
-      // Try to push to remote. 
-      // Using -u origin branchName or simple git push
       await runCommand(`git push origin ${branchName}`);
 
       console.log('Git push completed successfully!');
       res.json({ 
         success: true, 
-        message: `포메이션 저장 및 깃허브 푸시 성공! (전술: ${tacticsName})`,
+        message: `"${safeName}" 스쿼드가 성공적으로 저장 및 백업되었습니다.`,
         gitPushed: true 
       });
 
     } catch (gitErr) {
       console.error('Git integration failed:', gitErr);
+      // We still return success: true because the local save was successful, 
+      // but we indicate that Git push failed.
       res.json({ 
         success: true, 
-        message: '포메이션은 로컬에 성공적으로 저장되었으나, 깃허브 푸시 과정에서 오류가 발생했습니다. (Git 설정/권한 확인 필요)',
+        message: `"${safeName}" 스쿼드가 로컬에 저장되었습니다. 단, 서버 백업 과정에서 오류가 발생했습니다.`,
         gitPushed: false,
         gitError: gitErr.stderr || gitErr.message || 'Unknown error'
       });

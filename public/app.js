@@ -103,10 +103,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderPlacedPlayers();
 });
 
+// API Base URL (if hosted on Cloudflare Pages, requests will target local Express server)
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? ''
+  : 'http://localhost:3000';
+
 // 1. Fetch Squad List from Server
 async function fetchSquad() {
   try {
-    const res = await fetch('/api/squad');
+    const res = await fetch(`${API_BASE}/api/squad`);
     if (!res.ok) throw new Error('Failed to fetch squad');
     squad = await res.json();
     squad.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
@@ -121,7 +126,7 @@ async function fetchSquad() {
 // 2. Fetch List of Saved Formations
 async function fetchFormationsList(selectNameAfterFetch = '') {
   try {
-    const res = await fetch('/api/formations');
+    const res = await fetch(`${API_BASE}/api/formations`);
     if (!res.ok) throw new Error('Failed to fetch formations list');
     const list = await res.json();
     
@@ -159,7 +164,7 @@ async function loadSquadData(name) {
   }
 
   try {
-    const res = await fetch(`/api/formations/${encodeURIComponent(name)}`);
+    const res = await fetch(`${API_BASE}/api/formations/${encodeURIComponent(name)}`);
     if (!res.ok) throw new Error('Failed to fetch squad data');
     const data = await res.json();
     
@@ -544,7 +549,7 @@ function setupSaveButton() {
     };
 
     try {
-      const res = await fetch('/api/save', {
+      const res = await fetch(`${API_BASE}/api/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

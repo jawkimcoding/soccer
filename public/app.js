@@ -1,7 +1,43 @@
-// API Base URL (if hosted on Cloudflare Pages, requests will target local Express server)
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? ''
-  : 'http://localhost:3000';
+// 조우킴 축구단 선수 명단 (하드코딩 내장으로 로딩 에러 원천 차단)
+const SQUAD_DATA = [
+  { "id": 1, "name": "김재욱" },
+  { "id": 2, "name": "감사" },
+  { "id": 3, "name": "강혜성" },
+  { "id": 4, "name": "강희수" },
+  { "id": 5, "name": "규환" },
+  { "id": 6, "name": "김건한" },
+  { "id": 7, "name": "김남주" },
+  { "id": 8, "name": "김시형" },
+  { "id": 9, "name": "김영락" },
+  { "id": 10, "name": "김주노" },
+  { "id": 11, "name": "김창모" },
+  { "id": 12, "name": "김태민" },
+  { "id": 13, "name": "김학주(남주동생)" },
+  { "id": 14, "name": "노상우" },
+  { "id": 15, "name": "노유찬" },
+  { "id": 16, "name": "도티" },
+  { "id": 17, "name": "라퓨타_101" },
+  { "id": 18, "name": "배강수" },
+  { "id": 19, "name": "배신영" },
+  { "id": 20, "name": "배원권" },
+  { "id": 21, "name": "서한열" },
+  { "id": 22, "name": "손준호" },
+  { "id": 23, "name": "아들^^" },
+  { "id": 24, "name": "이동욱" },
+  { "id": 25, "name": "이승혁" },
+  { "id": 26, "name": "이재진" },
+  { "id": 27, "name": "이창식" },
+  { "id": 28, "name": "재영" },
+  { "id": 29, "name": "정주식" },
+  { "id": 30, "name": "준형" },
+  { "id": 31, "name": "진우" },
+  { "id": 32, "name": "쯘" },
+  { "id": 33, "name": "최재열" },
+  { "id": 34, "name": "최현동(Joel)" },
+  { "id": 35, "name": "한규호" },
+  { "id": 36, "name": "허경식" },
+  { "id": 37, "name": "황정훈" }
+];
 
 // Tactics Formation Configuration (coordinates in %)
 const formations = {
@@ -73,10 +109,20 @@ const formations = {
 };
 
 // Application State
-let squad = [];
+let squad = [...SQUAD_DATA];
+let currentQuarter = 1;
+
+// Quarters Data Model (Defaults)
+let quarters = {
+  1: { tactics: '4-4-2', placedPlayers: {} },
+  2: { tactics: '4-4-2', placedPlayers: {} },
+  3: { tactics: '4-4-2', placedPlayers: {} },
+  4: { tactics: '4-4-2', placedPlayers: {} }
+};
+
+// Active state shortcuts (dynamically points to active quarter data)
 let activeFormation = '4-4-2';
-let placedPlayers = {}; // slotId -> playerObject { id, name }
-let selectedSquadName = ''; // currently loaded squad file name
+let placedPlayers = {};
 
 // DOM Elements
 const pitch = document.getElementById('pitch');
@@ -85,129 +131,84 @@ const playersOverlay = document.getElementById('playersOverlay');
 const squadList = document.getElementById('squadList');
 const squadCount = document.getElementById('squadCount');
 const playerSearch = document.getElementById('playerSearch');
-const squadSelector = document.getElementById('squadSelector');
-const saveBtn = document.getElementById('saveBtn');
-const overlayLoader = document.getElementById('overlayLoader');
-const loaderTitle = document.getElementById('loaderTitle');
-const loaderDesc = document.getElementById('loaderDesc');
-const closeLoaderBtn = document.getElementById('closeLoaderBtn');
+const resetBtn = document.getElementById('resetBtn');
 
 // Initialize App
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  squad.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  squadCount.textContent = squad.length;
+
+  loadQuartersFromStorage();
+  setupQuarterTabs();
   setupTacticsButtons();
   setupDragAndDrop();
   setupSearch();
-  setupSaveButton();
-  setupSquadSelector();
+  setupResetButton();
   
-  await fetchSquad();
-  await fetchFormationsList();
-  
-  // Default pitch setup
-  renderPitchGuides();
-  renderPlacedPlayers();
+  // Render initial quarter
+  renderCurrentQuarter();
 });
 
-// 1. Fetch Squad List from Server
-async function fetchSquad() {
-  try {
-    const res = await fetch(`${API_BASE}/api/squad`);
-    if (!res.ok) throw new Error('Failed to fetch squad');
-    squad = await res.json();
-    squad.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-    squadCount.textContent = squad.length;
-    renderSquadList();
-  } catch (err) {
-    console.error(err);
-    squadList.innerHTML = '<div class="loading">명단을 가져오지 못했습니다.</div>';
+// Load data from LocalStorage
+function loadQuartersFromStorage() {
+  const saved = localStorage.getItem('soccer_formation_quarters');
+  if (saved) {
+    try {
+      quarters = JSON.parse(saved);
+    } catch (e) {
+      console.warn("Failed to load saved quarters from local storage", e);
+    }
   }
 }
 
-// 2. Fetch List of Saved Formations
-async function fetchFormationsList(selectNameAfterFetch = '') {
-  try {
-    const res = await fetch(`${API_BASE}/api/formations`);
-    if (!res.ok) throw new Error('Failed to fetch formations list');
-    const list = await res.json();
-    
-    // Clear old options except the first one
-    squadSelector.innerHTML = '<option value="">-- 새 스쿼드 작성 --</option>';
-    
-    list.forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      squadSelector.appendChild(opt);
+// Save data to LocalStorage
+function saveQuartersToStorage() {
+  localStorage.setItem('soccer_formation_quarters', JSON.stringify(quarters));
+}
+
+// Setup 1~4 Quarter Tabs
+function setupQuarterTabs() {
+  const tabs = document.querySelectorAll('.quarter-btn');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Save current state first
+      quarters[currentQuarter] = {
+        tactics: activeFormation,
+        placedPlayers: { ...placedPlayers }
+      };
+
+      // Switch quarter
+      currentQuarter = parseInt(tab.dataset.quarter);
+      renderCurrentQuarter();
     });
-
-    if (selectNameAfterFetch) {
-      squadSelector.value = selectNameAfterFetch;
-      selectedSquadName = selectNameAfterFetch;
-    } else {
-      squadSelector.value = selectedSquadName;
-    }
-  } catch (err) {
-    console.error('Failed to load formations list:', err);
-  }
-}
-
-// 3. Load Selected Squad Data
-async function loadSquadData(name) {
-  if (!name) {
-    // Reset to empty board
-    placedPlayers = {};
-    selectedSquadName = '';
-    renderPitchGuides();
-    renderPlacedPlayers();
-    renderSquadList(playerSearch.value);
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE}/api/formations/${encodeURIComponent(name)}`);
-    if (!res.ok) throw new Error('Failed to fetch squad data');
-    const data = await res.json();
-    
-    selectedSquadName = name;
-    
-    if (data.tactics && formations[data.tactics]) {
-      activeFormation = data.tactics;
-      
-      // Update buttons active status
-      document.querySelectorAll('.tactics-btn').forEach(btn => {
-        if (btn.dataset.formation === activeFormation) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
-    }
-
-    placedPlayers = {};
-    if (data.players && Array.isArray(data.players)) {
-      data.players.forEach(p => {
-        if (p.positionCode) {
-          placedPlayers[p.positionCode] = { id: p.id, name: p.name };
-        }
-      });
-    }
-
-    renderPitchGuides();
-    renderPlacedPlayers();
-    renderSquadList(playerSearch.value);
-  } catch (err) {
-    console.error('Failed to load squad data:', err);
-    alert('스쿼드 데이터를 불러오는 데 실패했습니다.');
-  }
-}
-
-function setupSquadSelector() {
-  squadSelector.addEventListener('change', (e) => {
-    loadSquadData(e.target.value);
   });
 }
 
-// 4. Render Squad List Pool
+// Render selected quarter configuration
+function renderCurrentQuarter() {
+  const quarterData = quarters[currentQuarter];
+  activeFormation = quarterData.tactics || '4-4-2';
+  placedPlayers = quarterData.placedPlayers || {};
+
+  // Update active tactics button
+  const tacticsButtons = document.querySelectorAll('.tactics-btn');
+  tacticsButtons.forEach(btn => {
+    if (btn.dataset.formation === activeFormation) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  renderPitchGuides();
+  renderPlacedPlayers();
+  renderSquadList(playerSearch.value);
+}
+
+// Render Squad List Pool
 function renderSquadList(searchTerm = '') {
   squadList.innerHTML = '';
   const filtered = squad.filter(player => 
@@ -219,7 +220,7 @@ function renderSquadList(searchTerm = '') {
     return;
   }
 
-  // Check if player is already placed
+  // Check if player is already placed in CURRENT quarter
   const placedIds = Object.values(placedPlayers).map(p => p.id);
 
   filtered.forEach(player => {
@@ -240,17 +241,14 @@ function renderSquadList(searchTerm = '') {
       <span class="player-card-name" title="${player.name}">${player.name}</span>
     `;
 
-    // Web Drag Events
     card.addEventListener('dragstart', handleDragStart);
-    
-    // Mobile Touch Events
     setupMobileTouchForCard(card);
 
     squadList.appendChild(card);
   });
 }
 
-// 5. Render Pitch Slots/Guides
+// Render Pitch Slots/Guides
 function renderPitchGuides() {
   guidesOverlay.innerHTML = '';
   const currentSlots = formations[activeFormation] || [];
@@ -268,7 +266,6 @@ function renderPitchGuides() {
       <span class="position-slot-role">${slot.role || ''}</span>
     `;
 
-    // Drop Events
     el.addEventListener('dragover', handleDragOver);
     el.addEventListener('dragleave', handleDragLeave);
     el.addEventListener('drop', handleDrop);
@@ -277,7 +274,7 @@ function renderPitchGuides() {
   });
 }
 
-// 6. Render Placed Players on Pitch
+// Render Placed Players on Pitch
 function renderPlacedPlayers() {
   playersOverlay.innerHTML = '';
   const currentSlots = formations[activeFormation] || [];
@@ -308,16 +305,21 @@ function renderPlacedPlayers() {
   });
 }
 
-// 7. Remove Player from Slot
+// Remove Player from Slot
 function removePlayer(slotId) {
   if (placedPlayers[slotId]) {
     delete placedPlayers[slotId];
+    
+    // Save state
+    quarters[currentQuarter].placedPlayers = { ...placedPlayers };
+    saveQuartersToStorage();
+
     renderPlacedPlayers();
     renderSquadList(playerSearch.value);
   }
 }
 
-// 8. Change Tactics Formation
+// Change Tactics Formation
 function setupTacticsButtons() {
   const buttons = document.querySelectorAll('.tactics-btn');
   buttons.forEach(btn => {
@@ -350,6 +352,12 @@ function setupTacticsButtons() {
       }
 
       activeFormation = newFormationName;
+      
+      // Save state
+      quarters[currentQuarter].tactics = activeFormation;
+      quarters[currentQuarter].placedPlayers = { ...placedPlayers };
+      saveQuartersToStorage();
+
       renderPitchGuides();
       renderPlacedPlayers();
       renderSquadList(playerSearch.value);
@@ -357,14 +365,14 @@ function setupTacticsButtons() {
   });
 }
 
-// 9. Search Functionality
+// Search
 function setupSearch() {
   playerSearch.addEventListener('input', (e) => {
     renderSquadList(e.target.value);
   });
 }
 
-// 10. Desktop Drag and Drop Logic
+// Desktop Drag and Drop Logic
 let draggedPlayer = null;
 
 function handleDragStart(e) {
@@ -397,6 +405,7 @@ function handleDrop(e) {
 }
 
 function placePlayerInSlot(player, slotId) {
+  // Prevent duplicate
   Object.keys(placedPlayers).forEach(sid => {
     if (placedPlayers[sid].id === player.id) {
       delete placedPlayers[sid];
@@ -404,11 +413,16 @@ function placePlayerInSlot(player, slotId) {
   });
 
   placedPlayers[slotId] = player;
+
+  // Save state
+  quarters[currentQuarter].placedPlayers = { ...placedPlayers };
+  saveQuartersToStorage();
+
   renderPlacedPlayers();
   renderSquadList(playerSearch.value);
 }
 
-// 11. Mobile Touch Drag and Drop Implementation
+// Mobile Touch Drag and Drop Implementation
 let touchDragEl = null;
 let touchActiveSlot = null;
 
@@ -423,7 +437,6 @@ function setupMobileTouchForCard(card) {
       name: card.dataset.name
     };
 
-    // Create a floating clone
     touchDragEl = document.createElement('div');
     touchDragEl.className = 'placed-player-card';
     touchDragEl.style.position = 'fixed';
@@ -502,99 +515,20 @@ function checkActiveSlotUnderTouch(clientX, clientY) {
   }
 }
 
-// 12. Save and Git Push via local Express Server
-function setupSaveButton() {
-  saveBtn.addEventListener('click', async () => {
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
-    const defaultSquadName = selectedSquadName || `${formattedDate} 스쿼드`;
+// Reset Button Logic
+function setupResetButton() {
+  resetBtn.addEventListener('click', () => {
+    if (confirm(`정말 ${currentQuarter}쿼터 포메이션을 비우시겠습니까?`)) {
+      placedPlayers = {};
+      activeFormation = '4-4-2';
 
-    const squadNameInput = prompt('저장할 스쿼드 이름을 입력하세요:', defaultSquadName);
-    
-    if (squadNameInput === null) return;
-    
-    const squadName = squadNameInput.trim();
-    if (!squadName) {
-      alert('스쿼드 이름을 올바르게 입력해주세요.');
-      return;
-    }
-
-    overlayLoader.classList.add('active');
-    closeLoaderBtn.style.display = 'none';
-    
-    updateLoaderState('스쿼드 저장 중...', '로컬 서버를 통해 데이터를 보관하고 GitHub로 업로드하고 있습니다.', 'loading');
-
-    const playersPayload = [];
-    const currentSlots = formations[activeFormation] || [];
-    
-    currentSlots.forEach(slot => {
-      const player = placedPlayers[slot.id];
-      if (player) {
-        playersPayload.push({
-          id: player.id,
-          name: player.name,
-          positionCode: slot.id
-        });
-      }
-    });
-
-    const payload = {
-      name: squadName,
-      tactics: activeFormation,
-      players: playersPayload
-    };
-
-    try {
-      const res = await fetch(`${API_BASE}/api/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) throw new Error('API server returned error');
+      quarters[currentQuarter] = {
+        tactics: activeFormation,
+        placedPlayers: {}
+      };
       
-      const result = await res.json();
-
-      if (result.success) {
-        // Refresh list
-        await fetchFormationsList(squadName);
-        
-        updateLoaderState(
-          '저장 완료!', 
-          `"${squadName}" 스쿼드가 성공적으로 기록되었습니다. (GitHub 백업 완료)`, 
-          'success'
-        );
-      } else {
-        throw new Error(result.message || 'Unknown save error');
-      }
-
-    } catch (err) {
-      console.error(err);
-      updateLoaderState(
-        '저장 실패', 
-        `오류가 발생했습니다: ${err.message || '로컬 서버가 실행 중인지 확인하세요.'}`, 
-        'error'
-      );
-    } finally {
-      closeLoaderBtn.style.display = 'block';
+      saveQuartersToStorage();
+      renderCurrentQuarter();
     }
   });
-
-  closeLoaderBtn.addEventListener('click', () => {
-    overlayLoader.classList.remove('active');
-  });
-}
-
-function updateLoaderState(title, desc, status) {
-  loaderTitle.textContent = title;
-  loaderDesc.textContent = desc;
-
-  const spinner = document.querySelector('.spinner');
-  if (status === 'loading') {
-    spinner.style.display = 'block';
-    spinner.style.borderColor = 'rgba(16, 185, 129, 0.1)';
-    spinner.style.borderTopColor = 'var(--accent-color)';
-  } else if (status === 'success' || status === 'error') {
-    spinner.style.display = 'none';
-  }
 }

@@ -265,7 +265,19 @@ function renderPlacedPlayers() {
     if (!player) return; // Empty slot
 
     const el = document.createElement('div');
-    el.className = 'placed-player';
+    
+    // Determine neon light color based on position slot ID
+    let neonClass = 'neon-mf'; // Default mid-fielder (green)
+    const sid = slot.id.toLowerCase();
+    if (sid.includes('gk')) {
+      neonClass = 'neon-gk'; // Keeper (yellow)
+    } else if (sid.includes('cb') || sid.includes('lb') || sid.includes('rb') || sid.includes('wb')) {
+      neonClass = 'neon-df'; // Defender (blue)
+    } else if (sid.includes('st') || sid.includes('st') || sid.includes('lw') || sid.includes('rw') || sid === 'ls' || sid === 'rs') {
+      neonClass = 'neon-fw'; // Forward (red)
+    }
+
+    el.className = `placed-player ${neonClass}`;
     el.style.left = `${slot.x}%`;
     el.style.top = `${slot.y}%`;
     el.dataset.slotId = slot.id;

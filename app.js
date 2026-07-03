@@ -137,16 +137,30 @@ const playerSearch = document.getElementById('playerSearch');
 const resetBtn = document.getElementById('resetBtn');
 const liveBoardQuarter = document.getElementById('liveBoardQuarter');
 
-// Vector SVG Jersey Designer (LINEUP11 Replica)
+// Vector SVG Jersey Designer (LINEUP11 Replica with 3D Gradients)
 function getJerseySvg(isGk) {
-  const mainColor = isGk ? '#2ecc71' : '#1e3a5f'; // Bright Green/Lime vs Deep Navy
-  const trimColor = isGk ? '#27ae60' : '#15253b'; // Secondary sleeves color
-  const outlineColor = '#ffffff';
+  const mainColor = isGk ? 'url(#gkGrad)' : 'url(#fieldGrad)';
+  const trimColor = isGk ? '#1a8244' : '#0c1624'; 
+  const outlineColor = 'rgba(255, 255, 255, 0.7)';
 
   return `
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <!-- Shadow -->
-      <ellipse cx="50" cy="88" rx="26" ry="6" fill="rgba(0,0,0,0.25)" filter="blur(2px)"/>
+      <defs>
+        <!-- Field jersey body linear gradient -->
+        <linearGradient id="fieldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#142136" />
+          <stop offset="35%" stop-color="#2a3f5f" />
+          <stop offset="70%" stop-color="#1b2a47" />
+          <stop offset="100%" stop-color="#0e1828" />
+        </linearGradient>
+        <!-- GK jersey body linear gradient -->
+        <linearGradient id="gkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#219b52" />
+          <stop offset="35%" stop-color="#2ecc71" />
+          <stop offset="70%" stop-color="#27ae60" />
+          <stop offset="100%" stop-color="#1e824c" />
+        </linearGradient>
+      </defs>
       <!-- Jersey Silhouette -->
       <path d="M 28 22 
                L 42 14 
@@ -163,17 +177,17 @@ function getJerseySvg(isGk) {
                Z" 
             fill="${mainColor}" 
             stroke="${outlineColor}" 
-            stroke-width="3" 
+            stroke-width="2.5" 
             stroke-linejoin="round"/>
       <!-- Sleeves trims -->
       <path d="M 16 32 L 26 43" stroke="${trimColor}" stroke-width="4.5" stroke-linecap="round"/>
       <path d="M 84 32 L 74 43" stroke="${trimColor}" stroke-width="4.5" stroke-linecap="round"/>
       <!-- V-Neck Collar -->
-      <path d="M 42 14 A 11 11 0 0 0 58 14 L 50 23 Z" fill="${trimColor}" stroke="${outlineColor}" stroke-width="1.5"/>
+      <path d="M 42 14 A 11 11 0 0 0 58 14 L 50 23 Z" fill="${trimColor}" stroke="${outlineColor}" stroke-width="1"/>
       <!-- Chest Emblem Badge -->
-      <circle cx="39" cy="32" r="3.5" fill="#f1c40f"/>
-      <line x1="39" y1="30" x2="39" y2="34" stroke="#fff" stroke-width="1"/>
-      <line x1="37" y1="32" x2="41" y2="32" stroke="#fff" stroke-width="1"/>
+      <circle cx="39" cy="32" r="3.5" fill="#f1c40f" opacity="0.9"/>
+      <line x1="39" y1="30" x2="39" y2="34" stroke="#fff" stroke-width="1" opacity="0.8"/>
+      <line x1="37" y1="32" x2="41" y2="32" stroke="#fff" stroke-width="1" opacity="0.8"/>
     </svg>
   `;
 }

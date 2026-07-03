@@ -1,4 +1,4 @@
-// 조우킴 축구단 선수 명단 (하드코딩 내장으로 로딩 에러 원천 차단)
+// 조우킴 축구단 선수 명단
 const SQUAD_DATA = [
   { "id": 1, "name": "김재욱" },
   { "id": 2, "name": "감사" },
@@ -112,7 +112,7 @@ const formations = {
 let squad = [...SQUAD_DATA];
 let currentQuarter = 1;
 
-// Quarters Data Model (Defaults)
+// Quarters Data Model (No storage - always fresh load)
 let quarters = {
   1: { tactics: '4-4-2', placedPlayers: {} },
   2: { tactics: '4-4-2', placedPlayers: {} },
@@ -120,7 +120,7 @@ let quarters = {
   4: { tactics: '4-4-2', placedPlayers: {} }
 };
 
-// Active state shortcuts (dynamically points to active quarter data)
+// Active state shortcuts
 let activeFormation = '4-4-2';
 let placedPlayers = {};
 
@@ -138,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
   squad.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   squadCount.textContent = squad.length;
 
-  loadQuartersFromStorage();
   setupQuarterTabs();
   setupTacticsButtons();
   setupDragAndDrop();
@@ -149,23 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCurrentQuarter();
 });
 
-// Load data from LocalStorage
-function loadQuartersFromStorage() {
-  const saved = localStorage.getItem('soccer_formation_quarters');
-  if (saved) {
-    try {
-      quarters = JSON.parse(saved);
-    } catch (e) {
-      console.warn("Failed to load saved quarters from local storage", e);
-    }
-  }
-}
-
-// Save data to LocalStorage
-function saveQuartersToStorage() {
-  localStorage.setItem('soccer_formation_quarters', JSON.stringify(quarters));
-}
-
 // Setup 1~4 Quarter Tabs
 function setupQuarterTabs() {
   const tabs = document.querySelectorAll('.quarter-btn');
@@ -174,7 +156,7 @@ function setupQuarterTabs() {
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
 
-      // Save current state first
+      // Save current state in memory
       quarters[currentQuarter] = {
         tactics: activeFormation,
         placedPlayers: { ...placedPlayers }
@@ -310,9 +292,8 @@ function removePlayer(slotId) {
   if (placedPlayers[slotId]) {
     delete placedPlayers[slotId];
     
-    // Save state
+    // Sync memory
     quarters[currentQuarter].placedPlayers = { ...placedPlayers };
-    saveQuartersToStorage();
 
     renderPlacedPlayers();
     renderSquadList(playerSearch.value);
@@ -353,10 +334,9 @@ function setupTacticsButtons() {
 
       activeFormation = newFormationName;
       
-      // Save state
+      // Sync memory
       quarters[currentQuarter].tactics = activeFormation;
       quarters[currentQuarter].placedPlayers = { ...placedPlayers };
-      saveQuartersToStorage();
 
       renderPitchGuides();
       renderPlacedPlayers();
@@ -384,6 +364,13 @@ function handleDragStart(e) {
   e.dataTransfer.effectAllowed = 'move';
 }
 
+// Drag and Drop implementation
+function setupDragAndDrop() {
+  pitch.addEventListener('dragover', (e) => {
+    e.preventDefault();
+  });
+}
+
 function handleDragOver(e) {
   e.preventDefault();
   this.classList.add('drag-over');
@@ -405,7 +392,6 @@ function handleDrop(e) {
 }
 
 function placePlayerInSlot(player, slotId) {
-  // Prevent duplicate
   Object.keys(placedPlayers).forEach(sid => {
     if (placedPlayers[sid].id === player.id) {
       delete placedPlayers[sid];
@@ -414,9 +400,8 @@ function placePlayerInSlot(player, slotId) {
 
   placedPlayers[slotId] = player;
 
-  // Save state
+  // Sync memory
   quarters[currentQuarter].placedPlayers = { ...placedPlayers };
-  saveQuartersToStorage();
 
   renderPlacedPlayers();
   renderSquadList(playerSearch.value);
@@ -527,7 +512,6 @@ function setupResetButton() {
         placedPlayers: {}
       };
       
-      saveQuartersToStorage();
       renderCurrentQuarter();
     }
   });

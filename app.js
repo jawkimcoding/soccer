@@ -710,7 +710,9 @@ function renderStatsTable() {
   `;
 
   statsList.forEach(stat => {
-    // Highlight rows of players who are actually playing
+    // 0회 출전 선수는 집계 목록에서 완전히 제외
+    if (stat.count === 0) return;
+
     const hasPlayed = stat.count > 0;
     const rowClass = hasPlayed ? 'highlight-row' : '';
 

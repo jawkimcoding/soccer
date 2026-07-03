@@ -202,7 +202,6 @@ function renderSquadList(searchTerm = '') {
     return;
   }
 
-  // Check if player is already placed in CURRENT quarter
   const placedIds = Object.values(placedPlayers).map(p => p.id);
 
   filtered.forEach(player => {
@@ -283,6 +282,9 @@ function renderPlacedPlayers() {
       removePlayer(slot.id);
     });
 
+    // Touch event for moving already placed player on mobile
+    setupMobileTouchForPlacedPlayer(el, slot.id, player);
+
     playersOverlay.appendChild(el);
   });
 }
@@ -291,8 +293,6 @@ function renderPlacedPlayers() {
 function removePlayer(slotId) {
   if (placedPlayers[slotId]) {
     delete placedPlayers[slotId];
-    
-    // Sync memory
     quarters[currentQuarter].placedPlayers = { ...placedPlayers };
 
     renderPlacedPlayers();
@@ -334,7 +334,6 @@ function setupTacticsButtons() {
 
       activeFormation = newFormationName;
       
-      // Sync memory
       quarters[currentQuarter].tactics = activeFormation;
       quarters[currentQuarter].placedPlayers = { ...placedPlayers };
 
@@ -364,7 +363,6 @@ function handleDragStart(e) {
   e.dataTransfer.effectAllowed = 'move';
 }
 
-// Drag and Drop implementation
 function setupDragAndDrop() {
   pitch.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -399,22 +397,41 @@ function placePlayerInSlot(player, slotId) {
   });
 
   placedPlayers[slotId] = player;
-
-  // Sync memory
   quarters[currentQuarter].placedPlayers = { ...placedPlayers };
 
   renderPlacedPlayers();
   renderSquadList(playerSearch.value);
 }
 
-// Mobile Touch Drag and Drop Implementation
+// ==========================================================================
+// Mobile Touch Drag and Drop Implementation (Optimized for Mobile)
+// ==========================================================================
 let touchDragEl = null;
 let touchActiveSlot = null;
 
+// Find which slot boundary contains the current touch coordinates (Highly accurate client rect mapping)
+function findSlotAtPoint(clientX, clientY) {
+  let matchedSlot = null;
+  const slots = document.querySelectorAll('.position-slot');
+  
+  slots.forEach(slot => {
+    const rect = slot.getBoundingClientRect();
+    if (clientX >= rect.left && clientX <= rect.right &&
+        clientY >= rect.top && clientY <= rect.bottom) {
+      matchedSlot = slot;
+    }
+  });
+  
+  return matchedSlot;
+}
+
+// 1. Mobile touch for players in the waiting pool list
 function setupMobileTouchForCard(card) {
   card.addEventListener('touchstart', function(e) {
     if (card.classList.contains('placed')) return;
 
+    // Prevent screen scrolling and zoom behaviors while dragging
+    e.preventDefault();
     e.stopPropagation();
 
     const playerData = {
@@ -422,26 +439,10 @@ function setupMobileTouchForCard(card) {
       name: card.dataset.name
     };
 
-    touchDragEl = document.createElement('div');
-    touchDragEl.className = 'placed-player-card';
-    touchDragEl.style.position = 'fixed';
-    touchDragEl.style.pointerEvents = 'none';
-    touchDragEl.style.zIndex = '1000';
-    touchDragEl.style.width = '55px';
-    touchDragEl.style.height = '55px';
-    touchDragEl.style.border = '3px solid var(--accent-color)';
-    touchDragEl.style.borderRadius = '50%';
-    touchDragEl.style.background = 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%)';
-    touchDragEl.style.display = 'flex';
-    touchDragEl.style.alignItems = 'center';
-    touchDragEl.style.justify = 'center';
-    touchDragEl.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
-    touchDragEl.innerHTML = '👕';
+    // Create a floating clone at finger position
+    createTouchFloatingClone(playerData.name, e.touches[0].clientX, e.touches[0].clientY);
 
-    const touch = e.touches[0];
-    moveTouchDragEl(touch.clientX, touch.clientY);
-    document.body.appendChild(touchDragEl);
-
+    // Highlight slots
     document.querySelectorAll('.position-slot').forEach(s => {
       s.style.borderColor = 'var(--accent-color)';
     });
@@ -450,18 +451,25 @@ function setupMobileTouchForCard(card) {
       moveEvent.preventDefault();
       const currentTouch = moveEvent.touches[0];
       moveTouchDragEl(currentTouch.clientX, currentTouch.clientY);
-      checkActiveSlotUnderTouch(currentTouch.clientX, currentTouch.clientY);
+      
+      // Check active slot using optimized bounding rect calculation
+      const slot = findSlotAtPoint(currentTouch.clientX, currentTouch.clientY);
+      if (touchActiveSlot) {
+        touchActiveSlot.classList.remove('drag-over');
+      }
+      touchActiveSlot = slot;
+      if (touchActiveSlot) {
+        touchActiveSlot.classList.add('drag-over');
+      }
     };
 
     const touchEndHandler = function(endEvent) {
       document.removeEventListener('touchmove', touchMoveHandler);
       document.removeEventListener('touchend', touchEndHandler);
 
-      if (touchDragEl) {
-        touchDragEl.remove();
-        touchDragEl = null;
-      }
+      removeTouchFloatingClone();
 
+      // Reset slot highlighting
       document.querySelectorAll('.position-slot').forEach(s => {
         s.style.borderColor = '';
         s.classList.remove('drag-over');
@@ -475,28 +483,119 @@ function setupMobileTouchForCard(card) {
 
     document.addEventListener('touchmove', touchMoveHandler, { passive: false });
     document.addEventListener('touchend', touchEndHandler);
-  });
+  }, { passive: false });
+}
+
+// 2. Mobile touch for moving already placed players within the pitch
+function setupMobileTouchForPlacedPlayer(placedEl, currentSlotId, player) {
+  placedEl.addEventListener('touchstart', function(e) {
+    // Prevent default scroll and bubble
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Create floating clone at touch position
+    createTouchFloatingClone(player.name, e.touches[0].clientX, e.touches[0].clientY);
+
+    // Temporarily hide current placed player to simulate drag
+    placedEl.style.opacity = '0.2';
+
+    // Highlight slots
+    document.querySelectorAll('.position-slot').forEach(s => {
+      s.style.borderColor = 'var(--accent-color)';
+    });
+
+    const touchMoveHandler = function(moveEvent) {
+      moveEvent.preventDefault();
+      const currentTouch = moveEvent.touches[0];
+      moveTouchDragEl(currentTouch.clientX, currentTouch.clientY);
+
+      const slot = findSlotAtPoint(currentTouch.clientX, currentTouch.clientY);
+      if (touchActiveSlot) {
+        touchActiveSlot.classList.remove('drag-over');
+      }
+      touchActiveSlot = slot;
+      if (touchActiveSlot) {
+        touchActiveSlot.classList.add('drag-over');
+      }
+    };
+
+    const touchEndHandler = function(endEvent) {
+      document.removeEventListener('touchmove', touchMoveHandler);
+      document.removeEventListener('touchend', touchEndHandler);
+
+      removeTouchFloatingClone();
+      placedEl.style.opacity = '1';
+
+      // Reset slot highlighting
+      document.querySelectorAll('.position-slot').forEach(s => {
+        s.style.borderColor = '';
+        s.classList.remove('drag-over');
+      });
+
+      if (touchActiveSlot) {
+        const newSlotId = touchActiveSlot.dataset.slotId;
+        
+        // Remove from old slot
+        delete placedPlayers[currentSlotId];
+        
+        // Place in new slot (automatically handles replacement or swap)
+        placePlayerInSlot(player, newSlotId);
+        
+        touchActiveSlot = null;
+      } else {
+        // If dropped outside, check if touch ended far outside the pitch to remove the player
+        const pitchRect = pitch.getBoundingClientRect();
+        const touch = endEvent.changedTouches[0];
+        
+        if (touch.clientX < pitchRect.left || touch.clientX > pitchRect.right ||
+            touch.clientY < pitchRect.top || touch.clientY > pitchRect.bottom) {
+          // Dropped outside pitch -> remove player
+          removePlayer(currentSlotId);
+        }
+      }
+    };
+
+    document.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    document.addEventListener('touchend', touchEndHandler);
+  }, { passive: false });
+}
+
+// Helpers for Touch Drag Clones
+function createTouchFloatingClone(name, clientX, clientY) {
+  if (touchDragEl) touchDragEl.remove();
+
+  touchDragEl = document.createElement('div');
+  touchDragEl.className = 'placed-player-card';
+  touchDragEl.style.position = 'fixed';
+  touchDragEl.style.pointerEvents = 'none';
+  touchDragEl.style.zIndex = '1000';
+  touchDragEl.style.width = '55px';
+  touchDragEl.style.height = '55px';
+  touchDragEl.style.border = '3px solid var(--accent-color)';
+  touchDragEl.style.borderRadius = '50%';
+  touchDragEl.style.background = 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-primary) 100%)';
+  touchDragEl.style.display = 'flex';
+  touchDragEl.style.alignItems = 'center';
+  touchDragEl.style.justifyContent = 'center';
+  touchDragEl.style.boxShadow = '0 10px 25px rgba(0,0,0,0.6)';
+  touchDragEl.innerHTML = '👕';
+
+  moveTouchDragEl(clientX, clientY);
+  document.body.appendChild(touchDragEl);
 }
 
 function moveTouchDragEl(clientX, clientY) {
   if (touchDragEl) {
+    // Center the clone on the finger
     touchDragEl.style.left = `${clientX - 27}px`;
     touchDragEl.style.top = `${clientY - 27}px`;
   }
 }
 
-function checkActiveSlotUnderTouch(clientX, clientY) {
-  if (touchActiveSlot) {
-    touchActiveSlot.classList.remove('drag-over');
-    touchActiveSlot = null;
-  }
-
-  const elements = document.elementsFromPoint(clientX, clientY);
-  const slot = elements.find(el => el.classList.contains('position-slot'));
-
-  if (slot) {
-    touchActiveSlot = slot;
-    slot.classList.add('drag-over');
+function removeTouchFloatingClone() {
+  if (touchDragEl) {
+    touchDragEl.remove();
+    touchDragEl = null;
   }
 }
 

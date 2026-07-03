@@ -75,7 +75,7 @@ const formations = {
     { id: 'lwb', label: 'LWB', role: '좌측 윙백', x: 12, y: 54 },
     { id: 'rwb', label: 'RWB', role: '우측 윙백', x: 88, y: 54 },
     { id: 'ldm', label: 'LDM', role: '좌측 수미', x: 35, y: 51 },
-    { id: 'rdm', role: 'RDM', role: '우측 수미', x: 65, y: 51 },
+    { id: 'rdm', label: 'RDM', role: '우측 수미', x: 65, y: 51 },
     { id: 'am', label: 'AM', role: '공격형 미드필더', x: 50, y: 34 },
     { id: 'lst', label: 'LS', role: '좌측 스트라이커', x: 35, y: 18 },
     { id: 'rst', label: 'RS', role: '우측 스트라이커', x: 65, y: 18 }
@@ -102,7 +102,7 @@ const formations = {
     { id: 'rwb', label: 'RWB', role: '우측 윙백', x: 88, y: 64 },
     { id: 'lcm', label: 'LCM', role: '좌중앙 미드필더', x: 30, y: 45 },
     { id: 'cm', label: 'CM', role: '중앙 미드필더', x: 50, y: 47 },
-    { id: 'rcm', label: 'RCM', role: '우중앙 미드필더', x: 70, y: 45 },
+    { id: 'rcm', role: 'RCM', role: '우중앙 미드필더', x: 70, y: 45 },
     { id: 'lst', label: 'LS', role: '좌측 스트라이커', x: 35, y: 20 },
     { id: 'rst', label: 'RS', role: '우측 스트라이커', x: 65, y: 20 }
   ]
@@ -136,6 +136,12 @@ const squadCount = document.getElementById('squadCount');
 const playerSearch = document.getElementById('playerSearch');
 const resetBtn = document.getElementById('resetBtn');
 const liveBoardQuarter = document.getElementById('liveBoardQuarter');
+
+// Modal Elements
+const squadQuarterCountBtn = document.getElementById('squadQuarterCountBtn');
+const squadCountModal = document.getElementById('squadCountModal');
+const modalCloseBtn = document.getElementById('modalCloseBtn');
+const modalTableContainer = document.getElementById('modalTableContainer');
 
 // Vector SVG Jersey Designer (LINEUP11 Replica with 3D Gradients)
 function getJerseySvg(isGk) {
@@ -203,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearch();
   setupResetButton();
   setupOutsideClickCancel();
+  setupModalEvents();
   
   // Render initial quarter
   renderCurrentQuarter();
@@ -210,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Setup 1~4 Quarter Tabs
 function setupQuarterTabs() {
-  const tabs = document.querySelectorAll('.quarter-btn');
+  const tabs = document.querySelectorAll('.quarter-btn:not(.count-btn)');
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       tabs.forEach(t => t.classList.remove('active'));
@@ -231,6 +238,39 @@ function setupQuarterTabs() {
       renderCurrentQuarter();
     });
   });
+}
+
+// Calculate play statistics for each squad member (across quarters 1~4)
+function getPlayerQuarterStats() {
+  const stats = {};
+  
+  // Initialize map
+  squad.forEach(p => {
+    stats[p.id] = {
+      name: p.name,
+      quarters: [],
+      count: 0
+    };
+  });
+
+  // Temporarily commit current active state before gathering stats
+  quarters[currentQuarter] = {
+    tactics: activeFormation,
+    placedPlayers: { ...placedPlayers }
+  };
+
+  // Aggregate stats
+  for (let q = 1; q <= 4; q++) {
+    const activeList = quarters[q].placedPlayers || {};
+    Object.values(activeList).forEach(player => {
+      if (stats[player.id]) {
+        stats[player.id].quarters.push(q);
+        stats[player.id].count++;
+      }
+    });
+  }
+
+  return stats;
 }
 
 // Render selected quarter configuration
@@ -254,7 +294,7 @@ function renderCurrentQuarter() {
   renderSquadList(playerSearch.value);
 }
 
-// Render Squad List Pool
+// Render Squad List Pool (Realtime badges incorporated)
 function renderSquadList(searchTerm = '') {
   squadList.innerHTML = '';
   const filtered = squad.filter(player => 
@@ -267,6 +307,9 @@ function renderSquadList(searchTerm = '') {
   }
 
   const placedIds = Object.values(placedPlayers).map(p => p.id);
+  
+  // Query play count stats for dynamic name badges
+  const playStats = getPlayerQuarterStats();
 
   filtered.forEach(player => {
     const card = document.createElement('div');
@@ -287,15 +330,26 @@ function renderSquadList(searchTerm = '') {
       card.classList.add('selected');
     }
 
+    // Determine badge content (e.g. "1,3Q" or "대기")
+    let badgeHtml = '';
+    const statsObj = playStats[player.id];
+    
+    if (statsObj && statsObj.count > 0) {
+      badgeHtml = `<span class="play-badge active">${statsObj.quarters.join(',')}Q</span>`;
+    } else {
+      badgeHtml = `<span class="play-badge">대기</span>`;
+    }
+
     card.innerHTML = `
       <span class="player-card-icon">👕</span>
       <span class="player-card-name" title="${player.name}">${player.name}</span>
+      ${badgeHtml}
     `;
 
     // Desktop HTML5 dragstart
     card.addEventListener('dragstart', handleDragStart);
 
-    // Hybrid click selection (No mobile touch listeners to prevent click suppression)
+    // Hybrid click selection
     card.addEventListener('click', (e) => {
       e.stopPropagation();
       if (isPlaced) return;
@@ -512,7 +566,7 @@ function placePlayerInSlot(player, slotId) {
 }
 
 // ==========================================================================
-// 100% Reliable Click-to-Place Handlers (Touch friendly, no scroll blocking)
+// Click-to-Place & Touch-to-Place Feature Handlers (Hybrid Mode)
 // ==========================================================================
 
 // Click on waiting list card
@@ -595,6 +649,98 @@ function setupOutsideClickCancel() {
       cancelPlacementSelection();
     }
   });
+}
+
+// ==========================================================================
+// Squad Play Counts Modal Dialog Logic
+// ==========================================================================
+function setupModalEvents() {
+  squadQuarterCountBtn.addEventListener('click', () => {
+    openStatsModal();
+  });
+
+  modalCloseBtn.addEventListener('click', () => {
+    closeStatsModal();
+  });
+
+  // Close when clicking overlay dark background
+  squadCountModal.addEventListener('click', (e) => {
+    if (e.target === squadCountModal) {
+      closeStatsModal();
+    }
+  });
+}
+
+function openStatsModal() {
+  cancelPlacementSelection();
+  renderStatsTable();
+  squadCountModal.classList.add('open');
+}
+
+function closeStatsModal() {
+  squadCountModal.classList.remove('open');
+}
+
+// Render dynamic statistics table (Sorted by play counts descending -> name)
+function renderStatsTable() {
+  const stats = getPlayerQuarterStats();
+  
+  // Convert to sortable array
+  const statsList = Object.values(stats);
+  
+  statsList.sort((a, b) => {
+    // Sort count (descending)
+    if (b.count !== a.count) {
+      return b.count - a.count;
+    }
+    // Sort name (ascending)
+    return a.name.localeCompare(b.name, 'ko');
+  });
+
+  let tableHtml = `
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>선수명</th>
+          <th>출전 쿼터</th>
+          <th style="text-align: center;">총 출전</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  statsList.forEach(stat => {
+    // Highlight rows of players who are actually playing
+    const hasPlayed = stat.count > 0;
+    const rowClass = hasPlayed ? 'highlight-row' : '';
+
+    let quarterBadges = '<span class="table-badge">-</span>';
+    if (hasPlayed) {
+      quarterBadges = `
+        <div class="badge-list">
+          ${[1, 2, 3, 4].map(q => {
+            const active = stat.quarters.includes(q);
+            return `<span class="table-badge ${active ? 'active' : ''}">${q}Q</span>`;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    tableHtml += `
+      <tr class="${rowClass}">
+        <td style="font-weight: 700;">${stat.name}</td>
+        <td>${quarterBadges}</td>
+        <td style="text-align: center;" class="${hasPlayed ? 'highlight-num' : ''}">${stat.count}회</td>
+      </tr>
+    `;
+  });
+
+  tableHtml += `
+      </tbody>
+    </table>
+  `;
+
+  modalTableContainer.innerHTML = tableHtml;
 }
 
 // Reset Button Logic

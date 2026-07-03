@@ -25,6 +25,7 @@
         <button class="quarter-btn" data-quarter="2">2쿼터</button>
         <button class="quarter-btn" data-quarter="3">3쿼터</button>
         <button class="quarter-btn" data-quarter="4">4쿼터</button>
+        <button class="quarter-btn count-btn" id="squadQuarterCountBtn">인당 쿼터수</button>
       </div>
     </header>
 
@@ -100,6 +101,21 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Quarter Count Stats Modal Overlay -->
+  <div class="modal-overlay" id="squadCountModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">선수별 출전 쿼터 현황</h3>
+        <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div id="modalTableContainer">
+          <!-- Table will be injected dynamically -->
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- JS -->

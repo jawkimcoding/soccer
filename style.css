@@ -130,6 +130,19 @@ body {
   box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
 }
 
+/* Count Button Accent style */
+.quarter-btn.count-btn {
+  border: 1px solid rgba(46, 189, 89, 0.35);
+  background: rgba(46, 189, 89, 0.1);
+  color: var(--accent-color);
+}
+
+.quarter-btn.count-btn:hover {
+  background: rgba(46, 189, 89, 0.2);
+  color: white;
+  border-color: transparent;
+}
+
 /* Main Workspace */
 .main-content {
   display: flex;
@@ -185,7 +198,7 @@ body {
   max-width: 620px;
   max-height: 750px;
   aspect-ratio: 4 / 5;
-  perspective: 1200px; /* 3D Depth */
+  perspective: 1200px;
   position: relative;
   overflow: visible;
 }
@@ -322,7 +335,7 @@ body {
   position: absolute;
   width: 60px;
   height: 60px;
-  transform: translate(-50%, -50%) rotateX(-26deg); /* Billboard 수직 정렬 */
+  transform: translate(-50%, -50%) rotateX(-26deg);
   transform-style: preserve-3d;
   border: 2px dashed rgba(255, 255, 255, 0.35);
   border-radius: 50%;
@@ -341,7 +354,6 @@ body {
   transform: translate(-50%, -50%) rotateX(-26deg) scale(1.08);
 }
 
-/* Touch select guiding flash */
 .position-slot.awaiting-placement {
   border-color: #fff;
   background-color: rgba(255, 255, 255, 0.15);
@@ -367,7 +379,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  transform: translate(-50%, -60%) rotateX(-26deg); /* Billboard 수직 정렬 */
+  transform: translate(-50%, -60%) rotateX(-26deg);
   transform-style: preserve-3d;
   cursor: pointer;
   pointer-events: auto;
@@ -375,11 +387,11 @@ body {
   transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.15);
 }
 
-/* 3D 지면 밀착형 그림자 (Jersey Drop Shadow) */
+/* 3D 지면 밀착형 그림자 */
 .placed-player::before {
   content: '';
   position: absolute;
-  bottom: 12px; /* 위치: 이름표 바로 위, 유니폼 아래 */
+  bottom: 12px;
   left: 50%;
   width: 32px;
   height: 5px;
@@ -391,7 +403,7 @@ body {
   transition: var(--transition-smooth);
 }
 
-/* 3D Floating Jersey Card - 둥실둥실 부유 효과 */
+/* 3D Floating Jersey Card */
 .placed-player-card {
   width: 58px;
   height: 58px;
@@ -441,7 +453,6 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   
-  /* Thick black text outline for grass legibility */
   text-shadow: 
     -1.5px -1.5px 0 #000,  
      1.5px -1.5px 0 #000,
@@ -616,7 +627,8 @@ body {
   padding: 0.65rem 0.8rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between; /* 배지가 있으면 양 끝 정렬 */
+  gap: 0.4rem;
   cursor: pointer;
   user-select: none;
   transition: var(--transition-smooth);
@@ -656,6 +668,27 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1; /* 이름 길면 영역 차지 */
+}
+
+/* Realtime Quarter Play count badge */
+.play-badge {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.1);
+  margin-left: 0.25rem;
+}
+
+.play-badge.active {
+  background-color: rgba(46, 189, 89, 0.15);
+  border-color: rgba(46, 189, 89, 0.35);
+  color: var(--accent-color);
+  box-shadow: 0 0 8px rgba(46, 189, 89, 0.15);
 }
 
 .loading {
@@ -695,6 +728,147 @@ body {
   border-color: transparent;
   box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25);
   transform: translateY(-1.5px);
+}
+
+/* ==========================================================================
+   Modal Stats Popup & Table Styles
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content {
+  background: rgba(19, 23, 36, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  width: 92%;
+  max-width: 500px;
+  max-height: 80vh;
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  transform: scale(0.92);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.modal-overlay.open .modal-content {
+  transform: scale(1);
+}
+
+.modal-header {
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  line-height: 1;
+}
+
+.modal-close-btn:hover {
+  color: #fff;
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.stats-table th {
+  text-align: left;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stats-table td {
+  padding: 0.65rem 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-weight: 500;
+}
+
+.stats-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+  color: #fff;
+}
+
+.stats-table .highlight-row td {
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.stats-table .highlight-num {
+  font-weight: 800;
+  color: var(--accent-color);
+}
+
+.stats-table .badge-list {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.stats-table .table-badge {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.stats-table .table-badge.active {
+  background: rgba(46, 189, 89, 0.12);
+  border-color: rgba(46, 189, 89, 0.35);
+  color: var(--accent-color);
 }
 
 /* ==========================================================================
